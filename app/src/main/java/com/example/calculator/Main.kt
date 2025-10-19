@@ -1,3 +1,5 @@
+package com.example.calculator
+
 fun main() {
     val humans = listOf(
         Human("Петров Т.И", 19, 10),
@@ -11,5 +13,5 @@ fun main() {
 
     all.forEach { it.move() }
 
-    Thread.sleep(6000) // ждём, пока потоки выполнятся
+    Thread.sleep(6000)
 }

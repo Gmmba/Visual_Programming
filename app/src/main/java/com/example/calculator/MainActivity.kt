@@ -22,7 +22,6 @@ class MainActivity : AppCompatActivity() {
             R.id.btnPlus, R.id.btnMinus, R.id.btnMul, R.id.btnDiv
         )
 
-        // Обработка цифр и операций
         for (id in buttons) {
             findViewById<Button>(id).setOnClickListener {
                 val text = (it as Button).text.toString()
@@ -31,13 +30,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Очистка
         findViewById<Button>(R.id.btnClear).setOnClickListener {
             input = ""
             tvResult.text = "0"
         }
 
-        // Равно — вычисление выражения
         findViewById<Button>(R.id.btnEqual).setOnClickListener {
             val result = calculate(input)
             tvResult.text = result
@@ -47,7 +44,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun calculate(expression: String): String {
         try {
-            // Находим оператор и разбиваем строку
             val operator = when {
                 expression.contains("+") -> "+"
                 expression.contains("-") -> "-"
