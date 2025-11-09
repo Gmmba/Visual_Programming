@@ -1,5 +1,6 @@
 package com.example.calculator
 
+import android.graphics.Color
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -17,40 +18,34 @@ class MainActivity : AppCompatActivity() {
 
         tvResult = findViewById(R.id.tvResult)
 
-        val btn0 = findViewById<Button>(R.id.btn0)
-        val btn1 = findViewById<Button>(R.id.btn1)
-        val btn2 = findViewById<Button>(R.id.btn2)
-        val btn3 = findViewById<Button>(R.id.btn3)
-        val btn4 = findViewById<Button>(R.id.btn4)
-        val btn5 = findViewById<Button>(R.id.btn5)
-        val btn6 = findViewById<Button>(R.id.btn6)
-        val btn7 = findViewById<Button>(R.id.btn7)
-        val btn8 = findViewById<Button>(R.id.btn8)
-        val btn9 = findViewById<Button>(R.id.btn9)
+        val Buttons = listOf(
+            R.id.btn0 to "0",
+            R.id.btn1 to "1",
+            R.id.btn2 to "2",
+            R.id.btn3 to "3",
+            R.id.btn4 to "4",
+            R.id.btn5 to "5",
+            R.id.btn6 to "6",
+            R.id.btn7 to "7",
+            R.id.btn8 to "8",
+            R.id.btn9 to "9",
+            R.id.btnPlus to "+",
+            R.id.btnMinus to "-",
+            R.id.btnMul to "*",
+            R.id.btnDiv to "/"
+        )
 
-        val btnPlus = findViewById<Button>(R.id.btnPlus)
-        val btnMinus = findViewById<Button>(R.id.btnMinus)
-        val btnMul = findViewById<Button>(R.id.btnMul)
-        val btnDiv = findViewById<Button>(R.id.btnDiv)
+        for ((buttonId, value) in Buttons) {
+            val button = findViewById<Button>(buttonId)
+
+            button.setOnClickListener {
+                addToInput(value)
+                button.setBackgroundColor(getRandomColor())
+            }
+        }
 
         val btnClear = findViewById<Button>(R.id.btnClear)
         val btnEqual = findViewById<Button>(R.id.btnEqual)
-
-        btn0.setOnClickListener { addToInput("0") }
-        btn1.setOnClickListener { addToInput("1") }
-        btn2.setOnClickListener { addToInput("2") }
-        btn3.setOnClickListener { addToInput("3") }
-        btn4.setOnClickListener { addToInput("4") }
-        btn5.setOnClickListener { addToInput("5") }
-        btn6.setOnClickListener { addToInput("6") }
-        btn7.setOnClickListener { addToInput("7") }
-        btn8.setOnClickListener { addToInput("8") }
-        btn9.setOnClickListener { addToInput("9") }
-
-        btnPlus.setOnClickListener { addToInput("+") }
-        btnMinus.setOnClickListener { addToInput("-") }
-        btnMul.setOnClickListener { addToInput("*") }
-        btnDiv.setOnClickListener { addToInput("/") }
 
         btnClear.setOnClickListener {
             input = ""
@@ -62,6 +57,13 @@ class MainActivity : AppCompatActivity() {
             tvResult.text = result
             input = result
         }
+    }
+
+    private fun getRandomColor(): Int {
+        val red = (0..255).random()
+        val green = (0..255).random()
+        val blue = (0..255).random()
+        return Color.rgb(red, green, blue)
     }
 
     private fun addToInput(value: String) {
