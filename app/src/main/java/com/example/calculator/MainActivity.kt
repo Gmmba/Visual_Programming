@@ -1,4 +1,3 @@
-// MainActivity.kt
 package com.example.calculator
 
 import android.content.Intent
@@ -14,6 +13,7 @@ class MainActivity : AppCompatActivity() {
 
         val btnCalc = findViewById<Button>(R.id.btnCalc)
         val btnPlayer = findViewById<Button>(R.id.btnPlayer)
+        val btnLoc = findViewById<Button>(R.id.btnLoc)
 
         btnCalc.setOnClickListener {
             val intent = Intent(this, CalculatorActivity::class.java)
@@ -21,6 +21,10 @@ class MainActivity : AppCompatActivity() {
         }
         btnPlayer.setOnClickListener {
             val intent = Intent(this, MediaPlayerActivity::class.java)
+            startActivity(intent)
+        }
+        btnLoc.setOnClickListener {
+            val intent = Intent(this, LocationActivity::class.java)
             startActivity(intent)
         }
     }

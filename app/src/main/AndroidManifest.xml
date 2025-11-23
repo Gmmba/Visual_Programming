@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -22,6 +24,7 @@
 
         <activity android:name=".CalculatorActivity" />
         <activity android:name=".MediaPlayerActivity" />
+        <activity android:name=".LocationActivity" />
 
     </application>
 

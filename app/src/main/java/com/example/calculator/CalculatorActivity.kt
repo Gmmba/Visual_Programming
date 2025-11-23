@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import kotlin.random.Random
 
 class CalculatorActivity : AppCompatActivity() {
 
@@ -39,6 +40,7 @@ class CalculatorActivity : AppCompatActivity() {
             button.setOnClickListener {
                 addToInput(value)
                 button.setBackgroundColor(getRandomColor())
+
             }
         }
 
@@ -46,11 +48,13 @@ class CalculatorActivity : AppCompatActivity() {
         val btnEqual = findViewById<Button>(R.id.btnEqual)
 
         btnClear.setOnClickListener {
+            btnClear.setBackgroundColor(getRandomColor())
             input = ""
             tvResult.text = "0"
         }
 
         btnEqual.setOnClickListener {
+            btnEqual.setBackgroundColor(getRandomColor())
             val result = calculate(input)
             tvResult.text = result
             input = result
@@ -58,9 +62,9 @@ class CalculatorActivity : AppCompatActivity() {
     }
 
     private fun getRandomColor(): Int {
-        val red = (0..255).random()
-        val green = (0..255).random()
-        val blue = (0..255).random()
+        val red = Random.nextInt(0, 255)
+        val green = Random.nextInt(0, 255)
+        val blue = Random.nextInt(0, 255)
         return Color.rgb(red, green, blue)
     }
 
