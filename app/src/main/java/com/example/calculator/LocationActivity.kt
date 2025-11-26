@@ -18,7 +18,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.io.File
-import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -33,9 +32,11 @@ class LocationActivity : AppCompatActivity(), LocationListener {
     private val PERMISSION_REQUEST_CODE = 100
 
     private val timeHandler = Handler(Looper.getMainLooper())
-    private val timeRunnable : () -> Unit = {
-        updateCurrentTime()
-        timeHandler.postDelayed(timeRunnable, 1000)
+    private val timeRunnable = object : Runnable {
+        override fun run() {
+            updateCurrentTime()
+            timeHandler.postDelayed(this, 1000)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,12 +51,21 @@ class LocationActivity : AppCompatActivity(), LocationListener {
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
     }
 
-    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onResume() {
         super.onResume()
         timeHandler.post(timeRunnable)
 
-        if (hasPermissions()) {
+        val fineLocationGranted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val coarseLocationGranted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (fineLocationGranted && coarseLocationGranted) {
             if (isLocationEnabled()) {
                 startLocation()
             } else {
@@ -72,41 +82,48 @@ class LocationActivity : AppCompatActivity(), LocationListener {
         locationManager.removeUpdates(this)
     }
 
-    private fun hasPermissions() =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-
     private fun requestPermissions() {
         ActivityCompat.requestPermissions(
             this,
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ),
             PERMISSION_REQUEST_CODE
         )
     }
 
-    private fun isLocationEnabled() =
-        locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    private fun isLocationEnabled(): Boolean {
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    }
 
     private fun openSettings() {
         Toast.makeText(this, "Включите геолокацию в настройках", Toast.LENGTH_SHORT).show()
-        startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+        startActivity(intent)
     }
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun startLocation() {
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 1f, this)
+        locationManager.requestLocationUpdates(
+            LocationManager.GPS_PROVIDER,
+            5000,
+            1f,
+            this
+        )
 
-        locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let { location ->
-            showLocation(location)
+        val lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+        if (lastLocation != null) {
+            showLocation(lastLocation)
         }
     }
 
     private fun updateCurrentTime() {
-        val now = System.currentTimeMillis()
-        val timeStr = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
-            .apply { timeZone = TimeZone.getDefault() }
-            .format(Date(now))
-        tvTime.text = "Время: $timeStr"
+        val currentTime = System.currentTimeMillis()
+        val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+        formatter.timeZone = TimeZone.getDefault()
+        val formattedTime = formatter.format(Date(currentTime))
+        tvTime.text = "Время: $formattedTime"
     }
 
     private fun showLocation(location: Location) {
@@ -116,21 +133,22 @@ class LocationActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun saveToJson(location: Location) {
-        val timeStr = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
-            .apply { timeZone = TimeZone.getDefault() }
-            .format(Date(location.time))
+        val currentTime = System.currentTimeMillis()
+        val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+        formatter.timeZone = TimeZone.getDefault()
+        val formattedTime = formatter.format(Date(currentTime))
 
         val json = """
         {
             "latitude": ${location.latitude},
             "longitude": ${location.longitude},
             "altitude": ${location.altitude},
-            "time": "$timeStr"
+            "time": "$formattedTime"
         }
-        """.trimIndent()
+        """
 
         val file = File(externalCacheDir, "location.json")
-        FileWriter(file, true).use { it.write(json + "\n") }
+        file.writeText(json)
     }
 
     override fun onLocationChanged(location: Location) {
@@ -138,15 +156,4 @@ class LocationActivity : AppCompatActivity(), LocationListener {
         saveToJson(location)
     }
 
-    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.getOrNull(0) == PackageManager.PERMISSION_GRANTED) {
-            if (isLocationEnabled()) startLocation() else openSettings()
-        }
-    }
 }
