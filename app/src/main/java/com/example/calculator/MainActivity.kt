@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
         val btnCalc = findViewById<Button>(R.id.btnCalc)
         val btnPlayer = findViewById<Button>(R.id.btnPlayer)
         val btnLoc = findViewById<Button>(R.id.btnLoc)
+        val btnTel = findViewById<Button>(R.id.btnTel)
 
         btnCalc.setOnClickListener {
             val intent = Intent(this, CalculatorActivity::class.java)
@@ -25,6 +26,10 @@ class MainActivity : AppCompatActivity() {
         }
         btnLoc.setOnClickListener {
             val intent = Intent(this, LocationActivity::class.java)
+            startActivity(intent)
+        }
+        btnTel.setOnClickListener {
+            val intent = Intent(this, TelephonyActivity::class.java)
             startActivity(intent)
         }
     }
