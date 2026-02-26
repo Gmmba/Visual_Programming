@@ -1,0 +1,5 @@
+/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles/imgui.dir
+/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles/implot.dir
+/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles/main.dir
+/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles/edit_cache.dir
+/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles/rebuild_cache.dir
