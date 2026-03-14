@@ -148,7 +148,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=backend_notes
+CMAKE_PROJECT_NAME:STATIC=LocationServer
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -233,6 +233,15 @@ GLEW_STATIC_LIBRARY_DEBUG:FILEPATH=GLEW_STATIC_LIBRARY_DEBUG-NOTFOUND
 //Path to a library.
 GLEW_STATIC_LIBRARY_RELEASE:FILEPATH=/usr/lib/x86_64-linux-gnu/libGLEW.a
 
+//Value Computed by CMake
+LocationServer_BINARY_DIR:STATIC=/mnt/c/Visual_Programming/Visual_Programming/backend/build
+
+//Value Computed by CMake
+LocationServer_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+LocationServer_SOURCE_DIR:STATIC=/mnt/c/Visual_Programming/Visual_Programming/backend
+
 //Path to a file.
 OPENGL_EGL_INCLUDE_DIR:PATH=/usr/include
 
@@ -272,14 +281,11 @@ OPENGL_xmesa_INCLUDE_DIR:PATH=OPENGL_xmesa_INCLUDE_DIR-NOTFOUND
 //The directory containing a CMake configuration file for SDL2.
 SDL2_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/SDL2
 
-//Value Computed by CMake
-backend_notes_BINARY_DIR:STATIC=/mnt/c/Visual_Programming/Visual_Programming/backend/build
+//The directory containing a CMake configuration file for ZeroMQ.
+ZeroMQ_DIR:PATH=/usr/local/lib/cmake/ZeroMQ
 
-//Value Computed by CMake
-backend_notes_IS_TOP_LEVEL:STATIC=ON
-
-//Value Computed by CMake
-backend_notes_SOURCE_DIR:STATIC=/mnt/c/Visual_Programming/Visual_Programming/backend
+//The directory containing a CMake configuration file for cppzmq.
+cppzmq_DIR:PATH=/usr/local/share/cmake/cppzmq
 
 
 ########################

@@ -11,15 +11,19 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import org.zeromq.ZContext
+import org.zeromq.ZMQ
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.Executors
 
 class LocationActivity : AppCompatActivity(), LocationListener {
 
@@ -30,6 +34,7 @@ class LocationActivity : AppCompatActivity(), LocationListener {
     private lateinit var tvTime: TextView
 
     private val PERMISSION_REQUEST_CODE = 100
+    private val TAG = "LocationActivity"
 
     private val timeHandler = Handler(Looper.getMainLooper())
     private val timeRunnable = object : Runnable {
@@ -38,6 +43,8 @@ class LocationActivity : AppCompatActivity(), LocationListener {
             timeHandler.postDelayed(this, 1000)
         }
     }
+
+    private val executor = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,7 +105,7 @@ class LocationActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun openSettings() {
-        Toast.makeText(this, "Включите геолокацию в настройках", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Включите геолокацию", Toast.LENGTH_SHORT).show()
         val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
         startActivity(intent)
     }
@@ -151,9 +158,53 @@ class LocationActivity : AppCompatActivity(), LocationListener {
         file.writeText(json)
     }
 
+    private fun sendToServer(location: Location) {
+        var context: ZContext? = null
+        var socket: ZMQ.Socket? = null
+
+        try {
+            val SERVER_IP = "10.0.2.2"
+            val SERVER_PORT = 5555
+            context = ZContext()
+            socket = context.createSocket(ZMQ.REQ)
+            socket.setReceiveTimeOut(3000)
+            socket.setSendTimeOut(3000)
+            socket.connect("tcp://$SERVER_IP:$SERVER_PORT")
+            val currentTime = System.currentTimeMillis()
+            val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+            formatter.timeZone = TimeZone.getDefault()
+            val formattedTime = formatter.format(Date(currentTime))
+
+            val json = """
+                {
+                    "latitude": ${location.latitude},
+                    "longitude": ${location.longitude},
+                    "altitude": ${location.altitude},
+                    "time": "$formattedTime"
+                }
+            """.trimIndent()
+
+            socket.send(json.toByteArray(Charsets.UTF_8), 0)
+
+            val reply = socket.recvStr(0)
+            if (reply != null) {
+                Log.d(TAG, "Успешно отправлено на сервер: $reply")
+            } else {
+                Log.w(TAG, "⚠Отправлено, но ответ не получен")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка подключения к серверу: ${e.message}")
+            Log.e(TAG, "Автоматическое переподключение при следующем обновлении местоположения")
+        } finally {
+            socket?.close()
+            context?.close()
+        }
+    }
     override fun onLocationChanged(location: Location) {
         showLocation(location)
         saveToJson(location)
+        executor.execute {
+            sendToServer(location)
+        }
     }
-
 }

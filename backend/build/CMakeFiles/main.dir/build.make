@@ -100,6 +100,7 @@ main: /usr/lib/x86_64-linux-gnu/libGLX.so
 main: /usr/lib/x86_64-linux-gnu/libGLU.so
 main: /usr/lib/x86_64-linux-gnu/libGLEW.so
 main: libimgui.a
+main: /usr/local/lib/libzmq.so.5.2.6
 main: CMakeFiles/main.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable main"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/main.dir/link.txt --verbose=$(VERBOSE)

@@ -17,7 +17,7 @@ class SocketsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_sockets)
 
         findViewById<Button>(R.id.btnSend).setOnClickListener {
-            val SERVER_IP = "192.168.43.34"
+            val SERVER_IP = "192.168.0.16"
             val context = ZContext()
             val socket = context.createSocket(SocketType.REQ)
             socket.connect("tcp://$SERVER_IP:12345")
