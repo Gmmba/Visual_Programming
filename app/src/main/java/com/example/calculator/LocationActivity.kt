@@ -185,7 +185,6 @@ class LocationActivity : AppCompatActivity(), LocationListener {
             """.trimIndent()
 
             socket.send(json.toByteArray(Charsets.UTF_8), 0)
-
             val reply = socket.recvStr(0)
             if (reply != null) {
                 Log.d(TAG, "Успешно отправлено на сервер: $reply")
