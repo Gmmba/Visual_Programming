@@ -190,7 +190,7 @@ class LocationActivity : AppCompatActivity(), LocationListener {
             if (reply != null) {
                 Log.d(TAG, "Успешно отправлено на сервер: $reply")
             } else {
-                Log.w(TAG, "⚠Отправлено, но ответ не получен")
+                Log.w(TAG, "Отправлено, но ответ не получен")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Ошибка подключения к серверу: ${e.message}")
