@@ -163,7 +163,7 @@ class LocationActivity : AppCompatActivity(), LocationListener {
         var socket: ZMQ.Socket? = null
 
         try {
-            val SERVER_IP = "10.0.2.2"
+            val SERVER_IP = "192.168.0.16"
             val SERVER_PORT = 5555
             context = ZContext()
             socket = context.createSocket(ZMQ.REQ)
