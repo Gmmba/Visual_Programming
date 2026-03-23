@@ -27,7 +27,8 @@
         <activity android:name=".MediaPlayerActivity" />
         <activity android:name=".LocationActivity" />
         <activity android:name=".TelephonyActivity" />
-        <activity android:name=".SocketsActivity"  />
+        <activity android:name=".SocketsActivity" />
+        <activity android:name=".ServiceActivity" />
 
     </application>
 

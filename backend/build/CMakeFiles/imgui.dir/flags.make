@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/usr/include/SDL2 -I/mnt/c/Visual_Programming/Visual_Programming/backend/third_party/imgui -I/mnt/c/Visual_Programming/Visual_Programming/backend/third_party/implot -I/mnt/c/Visual_Programming/Visual_Programming/backend/include
+CXX_INCLUDES = -I/usr/include/SDL2 -I/mnt/c/Visual_Programming/Visual_Programming/backend/include -I/mnt/c/Visual_Programming/Visual_Programming/backend/third_party/imgui -I/mnt/c/Visual_Programming/Visual_Programming/backend/third_party/implot
 
 CXX_FLAGS = -std=gnu++17 -fPIC
 
