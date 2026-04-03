@@ -3,45 +3,40 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="24dp"
+    android:gravity="center">
 
     <TextView
-        android:id="@+id/tv_lat"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Широта: "
+        android:text="Network Signal Monitor"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="32dp" />
+
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Сервис не запущен"
         android:textSize="18sp"
-        android:padding="4dp" />
+        android:textColor="#FF666666"
+        android:layout_marginBottom="40dp"
+        android:gravity="center" />
 
-    <TextView
-        android:id="@+id/tv_lon"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Долгота: "
+    <Button
+        android:id="@+id/btn_start"
+        android:layout_width="240dp"
+        android:layout_height="60dp"
+        android:text="Запустить сервис"
         android:textSize="18sp"
-        android:padding="4dp" />
+        android:layout_marginBottom="16dp" />
 
-    <TextView
-        android:id="@+id/tv_alt"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Высота: "
-        android:textSize="18sp"
-        android:padding="4dp" />
+    <Button
+        android:id="@+id/btn_stop"
+        android:layout_width="240dp"
+        android:layout_height="60dp"
+        android:text="Остановить сервис"
+        android:textSize="18sp" />
 
-    <TextView
-        android:id="@+id/tv_time"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Время: "
-        android:textSize="18sp"
-        android:padding="4dp" />
-
-    <TextView
-        android:id="@+id/tv_network"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Сеть: "
-        android:textSize="14sp"
-        android:padding="4dp" />
 </LinearLayout>
