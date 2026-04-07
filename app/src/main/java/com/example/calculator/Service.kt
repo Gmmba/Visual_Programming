@@ -1,6 +1,10 @@
 package com.example.calculator
 
 import android.Manifest
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -13,10 +17,14 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresPermission
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import org.zeromq.ZContext
 import org.zeromq.ZMQ
+import org.json.JSONObject
+import org.json.JSONArray
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -26,6 +34,9 @@ class Service : Service(), LocationListener {
         const val ACTION_START = "com.example.calculator.action.START"
         const val ACTION_STOP = "com.example.calculator.action.STOP"
         const val TAG = "Service"
+        private const val NOTIFICATION_ID = 1001
+        private const val CHANNEL_ID = "location_service_channel"
+        private const val DATA_FILE_NAME = "pending_data.jsonl"
     }
 
     private lateinit var locationManager: LocationManager
@@ -33,12 +44,43 @@ class Service : Service(), LocationListener {
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
     private var isRunning = false
+    private var isSendingPending = false   // предотвращает одновременную отправку архива
 
     override fun onCreate() {
         super.onCreate()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-        Log.d(TAG, "Сервис создан")
+        createNotificationChannel()
+        startForeground(NOTIFICATION_ID, createNotification())
+        Log.d(TAG, "Сервис создан и переведён в foreground")
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Location and Network Service",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Сбор данных о местоположении и сети для отправки на сервер"
+            }
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun createNotification(): Notification {
+        val notificationIntent = Intent(this, ServiceActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, notificationIntent,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Мониторинг местоположения")
+            .setContentText("Данные отправляются на сервер...")
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setContentIntent(pendingIntent)
+            .build()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -47,6 +89,8 @@ class Service : Service(), LocationListener {
                 if (!isRunning) {
                     isRunning = true
                     startDataCollection()
+                    // При старте пробуем отправить всё, что накопилось
+                    serviceScope.launch { sendPendingData() }
                     Log.d(TAG, "Сбор данных запущен")
                 }
             }
@@ -87,7 +131,7 @@ class Service : Service(), LocationListener {
     }
 
     @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-    private fun collectAndSendData(location: Location) {
+    private suspend fun collectAndSendData(location: Location) {
         try {
             val networkData = getNetworkData()
             val currentTime = System.currentTimeMillis()
@@ -95,10 +139,81 @@ class Service : Service(), LocationListener {
             formatter.timeZone = TimeZone.getDefault()
             val formattedTime = formatter.format(Date(currentTime))
 
-            sendToServer(location, networkData as MutableMap<String, Any>, formattedTime)
-            Log.d(TAG, "Данные отправлены: lat=${location.latitude}, lon=${location.longitude}, net=${networkData["networkType"]}")
+            val json = buildJson(location, networkData, formattedTime)
+            val success = sendJsonToServer(json.toString())
+
+            if (success) {
+                Log.d(TAG, "Данные отправлены: lat=${location.latitude}, lon=${location.longitude}")
+                // После успешной отправки текущей точки пробуем отправить архив
+                sendPendingData()
+            } else {
+                // Сохраняем в файл для последующей отправки
+                saveDataToFile(json.toString())
+                Log.d(TAG, "Данные сохранены в файл (сервер недоступен)")
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка сбора данных: ${e.message}", e)
+            Log.e(TAG, "Ошибка сбора/отправки: ${e.message}", e)
+            // При ошибке тоже сохраняем, чтобы не потерять
+            try {
+                val networkData = getNetworkData()
+                val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+                val json = buildJson(location, networkData, formatter.format(Date()))
+                saveDataToFile(json.toString())
+            } catch (ex: Exception) {
+                Log.e(TAG, "Не удалось даже сохранить в файл: ${ex.message}")
+            }
+        }
+    }
+
+    private fun buildJson(location: Location, networkData: Map<String, Any?>, time: String): JSONObject {
+        return JSONObject().apply {
+            put("latitude", location.latitude)
+            put("longitude", location.longitude)
+            put("altitude", location.altitude)
+            put("accuracy", location.accuracy.toDouble())
+            put("time", time)
+            put("networkType", networkData["networkType"]?.toString() ?: "Unknown")
+            put("networkOperator", networkData["networkOperator"]?.toString() ?: "")
+            put("networkOperatorName", networkData["networkOperatorName"]?.toString() ?: "")
+
+            // LTE
+            put("lteCellId", getLongValue(networkData["lteCellId"]))
+            put("lteEarfcn", getIntValue(networkData["lteEarfcn"]))
+            put("lteMcc", getIntValue(networkData["lteMcc"]))
+            put("lteMnc", getIntValue(networkData["lteMnc"]))
+            put("ltePci", getIntValue(networkData["ltePci"]))
+            put("lteTac", getIntValue(networkData["lteTac"]))
+            put("lteAsuLevel", getIntValue(networkData["lteAsuLevel"]))
+            put("lteCqi", getIntValue(networkData["lteCqi"]))
+            put("lteRsrp", getIntValue(networkData["lteRsrp"]))
+            put("lteRsrq", getIntValue(networkData["lteRsrq"]))
+            put("lteRssi", getIntValue(networkData["lteRssi"]))
+            put("lteRssnr", getIntValue(networkData["lteRssnr"]))
+            put("lteTimingAdvance", getIntValue(networkData["lteTimingAdvance"]))
+
+            // GSM
+            put("gsmCellId", getIntValue(networkData["gsmCellId"]))
+            put("gsmBsic", getIntValue(networkData["gsmBsic"]))
+            put("gsmArfcn", getIntValue(networkData["gsmArfcn"]))
+            put("gsmLac", getIntValue(networkData["gsmLac"]))
+            put("gsmMcc", getIntValue(networkData["gsmMcc"]))
+            put("gsmMnc", getIntValue(networkData["gsmMnc"]))
+            put("gsmPsc", getIntValue(networkData["gsmPsc"]))
+            put("gsmDbm", getIntValue(networkData["gsmDbm"]))
+            put("gsmTimingAdvance", getIntValue(networkData["gsmTimingAdvance"]))
+
+            // NR
+            put("nrBand", getIntValue(networkData["nrBand"]))
+            put("nrNci", getLongValue(networkData["nrNci"]))
+            put("nrPci", getIntValue(networkData["nrPci"]))
+            put("nrNrarfcn", getIntValue(networkData["nrNrarfcn"]))
+            put("nrTac", getIntValue(networkData["nrTac"]))
+            put("nrMcc", getIntValue(networkData["nrMcc"]))
+            put("nrMnc", getIntValue(networkData["nrMnc"]))
+            put("nrSsRsrp", getIntValue(networkData["nrSsRsrp"]))
+            put("nrSsRsrq", getIntValue(networkData["nrSsRsrq"]))
+            put("nrSsSinr", getIntValue(networkData["nrSsSinr"]))
+            put("nrTimingAdvance", getIntValue(networkData["nrTimingAdvance"]))
         }
     }
 
@@ -155,8 +270,8 @@ class Service : Service(), LocationListener {
                             data["nrPci"] = if (id.pci != Int.MAX_VALUE) id.pci else 0
                             data["nrNrarfcn"] = if (id.nrarfcn != Int.MAX_VALUE) id.nrarfcn else 0
                             data["nrTac"] = if (id.tac != Int.MAX_VALUE) id.tac else 0
-                            data["nrMcc"] = id.mccString ?: 0
-                            data["nrMnc"] = id.mncString ?: 0
+                            data["nrMcc"] = id.mccString?.toIntOrNull() ?: 0
+                            data["nrMnc"] = id.mncString?.toIntOrNull() ?: 0
                             data["nrSsRsrp"] = if (sig.ssRsrp != Int.MAX_VALUE) sig.ssRsrp else 0
                             data["nrSsRsrq"] = if (sig.ssRsrq != Int.MAX_VALUE) sig.ssRsrq else 0
                             data["nrSsSinr"] = if (sig.ssSinr != Int.MAX_VALUE) sig.ssSinr else 0
@@ -173,106 +288,111 @@ class Service : Service(), LocationListener {
         return data
     }
 
-    private fun sendToServer(location: Location, networkData: MutableMap<String, Any>, time: String) {
-        var context: ZContext? = null
-        var socket: ZMQ.Socket? = null
+    // ------------------- Работа с файлом -------------------
+    private fun getDataFile(): File = File(filesDir, DATA_FILE_NAME)
 
+    private fun saveDataToFile(jsonLine: String) {
         try {
-            val SERVER_IP = "192.168.43.34"
-            val SERVER_PORT = 5555
-
-            context = ZContext()
-            socket = context.createSocket(ZMQ.REQ)
-            socket.receiveTimeOut = 5000
-            socket.sendTimeOut = 5000
-            socket.connect("tcp://$SERVER_IP:$SERVER_PORT")
-
-            val jsonObject = org.json.JSONObject()
-
-            jsonObject.put("latitude", location.latitude)
-            jsonObject.put("longitude", location.longitude)
-            jsonObject.put("altitude", location.altitude)
-            jsonObject.put("accuracy", location.accuracy.toDouble())
-            jsonObject.put("time", time)
-            jsonObject.put("networkType", networkData["networkType"]?.toString() ?: "Unknown")
-            jsonObject.put("networkOperator", networkData["networkOperator"]?.toString() ?: "")
-            jsonObject.put("networkOperatorName", networkData["networkOperatorName"]?.toString() ?: "")
-            jsonObject.put("lteCellId", getLongValue(networkData["lteCellId"]))
-            jsonObject.put("lteEarfcn", getIntValue(networkData["lteEarfcn"]))
-            jsonObject.put("lteMcc", getIntValue(networkData["lteMcc"]))
-            jsonObject.put("lteMnc", getIntValue(networkData["lteMnc"]))
-            jsonObject.put("ltePci", getIntValue(networkData["ltePci"]))
-            jsonObject.put("lteTac", getIntValue(networkData["lteTac"]))
-            jsonObject.put("lteAsuLevel", getIntValue(networkData["lteAsuLevel"]))
-            jsonObject.put("lteCqi", getIntValue(networkData["lteCqi"]))
-            jsonObject.put("lteRsrp", getIntValue(networkData["lteRsrp"]))
-            jsonObject.put("lteRsrq", getIntValue(networkData["lteRsrq"]))
-            jsonObject.put("lteRssi", getIntValue(networkData["lteRssi"]))
-            jsonObject.put("lteRssnr", getIntValue(networkData["lteRssnr"]))
-            jsonObject.put("lteTimingAdvance", getIntValue(networkData["lteTimingAdvance"]))
-            jsonObject.put("gsmCellId", getIntValue(networkData["gsmCellId"]))
-            jsonObject.put("gsmBsic", getIntValue(networkData["gsmBsic"]))
-            jsonObject.put("gsmArfcn", getIntValue(networkData["gsmArfcn"]))
-            jsonObject.put("gsmLac", getIntValue(networkData["gsmLac"]))
-            jsonObject.put("gsmMcc", getIntValue(networkData["gsmMcc"]))
-            jsonObject.put("gsmMnc", getIntValue(networkData["gsmMnc"]))
-            jsonObject.put("gsmPsc", getIntValue(networkData["gsmPsc"]))
-            jsonObject.put("gsmDbm", getIntValue(networkData["gsmDbm"]))
-            jsonObject.put("gsmTimingAdvance", getIntValue(networkData["gsmTimingAdvance"]))
-            jsonObject.put("nrBand", getIntValue(networkData["nrBand"]))
-            jsonObject.put("nrNci", getLongValue(networkData["nrNci"]))
-            jsonObject.put("nrPci", getIntValue(networkData["nrPci"]))
-            jsonObject.put("nrNrarfcn", getIntValue(networkData["nrNrarfcn"]))
-            jsonObject.put("nrTac", getIntValue(networkData["nrTac"]))
-            jsonObject.put("nrMcc", getIntValue(networkData["nrMcc"]))
-            jsonObject.put("nrMnc", getIntValue(networkData["nrMnc"]))
-            jsonObject.put("nrSsRsrp", getIntValue(networkData["nrSsRsrp"]))
-            jsonObject.put("nrSsRsrq", getIntValue(networkData["nrSsRsrq"]))
-            jsonObject.put("nrSsSinr", getIntValue(networkData["nrSsSinr"]))
-            jsonObject.put("nrTimingAdvance", getIntValue(networkData["nrTimingAdvance"]))
-
-            val jsonString = jsonObject.toString()
-
-            Log.d(TAG, "Отправка JSON: $jsonString")
-
-            socket.send(jsonString.toByteArray(Charsets.UTF_8))
-            val reply = socket.recvStr()
-            Log.d(TAG, "Ответ сервера: $reply")
-
+            getDataFile().appendText("$jsonLine\n")
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка отправки: ${e.message}", e)
+            Log.e(TAG, "Ошибка записи в файл: ${e.message}")
+        }
+    }
+
+    private fun loadAllData(): List<String> {
+        val file = getDataFile()
+        if (!file.exists()) return emptyList()
+        return try {
+            file.readLines().filter { it.isNotBlank() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка чтения файла: ${e.message}")
+            emptyList()
+        }
+    }
+
+    private fun clearDataFile() {
+        try {
+            getDataFile().delete()
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка удаления файла: ${e.message}")
+        }
+    }
+
+    private suspend fun sendPendingData() {
+        if (isSendingPending) return
+        isSendingPending = true
+        try {
+            val pendingList = loadAllData()
+            if (pendingList.isEmpty()) return
+
+            Log.d(TAG, "Найдено ${pendingList.size} отложенных записей, отправляем...")
+            // Отправляем одним массивом для экономии запросов
+            val success = sendBatchToServer(pendingList)
+            if (success) {
+                clearDataFile()
+                Log.d(TAG, "Отложенные данные успешно отправлены, файл очищен")
+            } else {
+                Log.w(TAG, "Не удалось отправить отложенные данные, оставляем в файле")
+            }
         } finally {
-            socket?.close()
-            context?.close()
+            isSendingPending = false
         }
     }
 
-    private fun getIntValue(value: Any?): Int {
-        return when (value) {
-            is Int -> value
-            is Long -> value.toInt()
-            is String -> value.toIntOrNull() ?: 0
-            else -> 0
+    private suspend fun sendBatchToServer(jsonLines: List<String>): Boolean {
+        val jsonArray = JSONArray()
+        for (line in jsonLines) {
+            try {
+                jsonArray.put(JSONObject(line))
+            } catch (e: Exception) {
+                Log.e(TAG, "Ошибка парсинга сохранённой строки: $line", e)
+            }
+        }
+        if (jsonArray.length() == 0) return true
+        return sendJsonToServer(jsonArray.toString())
+    }
+
+    // ------------------- Отправка через ZMQ -------------------
+    private suspend fun sendJsonToServer(jsonString: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            var context: ZContext? = null
+            var socket: ZMQ.Socket? = null
+            try {
+                val SERVER_IP = "192.168.43.34"
+                val SERVER_PORT = 5555
+
+                context = ZContext()
+                socket = context.createSocket(ZMQ.REQ)
+                socket.receiveTimeOut = 3000   // 3 секунды
+                socket.sendTimeOut = 3000
+                socket.connect("tcp://$SERVER_IP:$SERVER_PORT")
+
+                socket.send(jsonString.toByteArray(Charsets.UTF_8))
+                val reply = socket.recvStr()
+                reply != null && reply == "ACK"
+            } catch (e: Exception) {
+                Log.e(TAG, "Ошибка отправки: ${e.message}")
+                false
+            } finally {
+                socket?.close()
+                context?.close()
+            }
         }
     }
 
-    private fun getLongValue(value: Any?): Long {
-        return when (value) {
-            is Long -> value
-            is Int -> value.toLong()
-            is String -> value.toLongOrNull() ?: 0L
-            else -> 0L
-        }
+    // Вспомогательные преобразователи
+    private fun getIntValue(value: Any?): Int = when (value) {
+        is Int -> value
+        is Long -> value.toInt()
+        is String -> value.toIntOrNull() ?: 0
+        else -> 0
     }
 
-    private fun getDoubleValue(value: Any?): Double {
-        return when (value) {
-            is Double -> value
-            is Float -> value.toDouble()
-            is Int -> value.toDouble()
-            is String -> value.toDoubleOrNull() ?: 0.0
-            else -> 0.0
-        }
+    private fun getLongValue(value: Any?): Long = when (value) {
+        is Long -> value
+        is Int -> value.toLong()
+        is String -> value.toLongOrNull() ?: 0L
+        else -> 0L
     }
 
     override fun onDestroy() {

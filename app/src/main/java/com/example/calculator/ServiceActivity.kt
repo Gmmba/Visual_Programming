@@ -1,6 +1,9 @@
 package com.example.calculator
 
+import android.Manifest
+import android.os.Build
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -12,10 +15,25 @@ class ServiceActivity : AppCompatActivity() {
     private lateinit var tvStatus: TextView
     private lateinit var btnStart: Button
     private lateinit var btnStop: Button
+    private val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+            Manifest.permission.READ_PHONE_STATE
+        )
+    } else {
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.READ_PHONE_STATE
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_service)
+        if (!hasPermissions()) {
+            requestPermissions(REQUIRED_PERMISSIONS, 100)
+        }
 
         tvStatus = findViewById(R.id.tv_status)
         btnStart = findViewById(R.id.btn_start)
@@ -43,5 +61,11 @@ class ServiceActivity : AppCompatActivity() {
         stopService(Intent(this, Service::class.java).apply {
             action = Service.ACTION_STOP
         })
+    }
+
+    private fun hasPermissions(): Boolean {
+        return REQUIRED_PERMISSIONS.all {
+            checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
+        }
     }
 }

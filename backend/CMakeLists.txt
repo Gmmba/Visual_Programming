@@ -11,6 +11,7 @@ find_package(GLEW REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(ZMQ REQUIRED libzmq)
 find_package(cppzmq REQUIRED)
+find_package(PostgreSQL REQUIRED)
 
 set(THIRD_PARTY ${PROJECT_SOURCE_DIR}/third_party)
 include_directories(
@@ -49,4 +50,5 @@ target_link_libraries(main PRIVATE
     ${GLEW_LIBRARIES}
     ${ZMQ_LIBRARIES}
     cppzmq
+    PostgreSQL::PostgreSQL
 )

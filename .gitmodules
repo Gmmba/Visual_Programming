@@ -12,3 +12,13 @@
 	path = backend/third_party/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "backend/third_party/third_party/implot"]
+	path = backend/third_party/third_party/implot
+	url = https://github.com/epezent/implot.git
+[submodule "backend/build/third_party/implot"]
+	path = backend/build/third_party/implot
+	url = https://github.com/epezent/implot.git
+[submodule "backend/build/third_party/imgui"]
+	path = backend/build/third_party/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

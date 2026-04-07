@@ -27,9 +27,12 @@ struct LocationData {
     std::vector<float> lteRssiData;
     std::vector<int>   lteAsuData;
     std::vector<int>   lteCqiData;
+    std::vector<float> lteRssnrData;
+    std::vector<int>   lteTimingAdvanceData;
     std::vector<float> nrSsRsrpData;
     std::vector<float> nrSsRsrqData;
     std::vector<float> nrSsSinrData;
+    std::vector<int>   nrTimingAdvanceData;
     int lteCellId = 0;
     int lteEarfcn = 0;
     int lteMcc = 0;
@@ -63,10 +66,8 @@ struct LocationData {
     int nrSsRsrq = 0;
     int nrSsSinr = 0;
     int nrTimingAdvance = 0;
-    
     std::string networkOperator;
     std::string networkOperatorName;
-    
     mutable std::mutex mtx;
 };
 
@@ -80,12 +81,145 @@ T getJsonValue(const json& j, const std::string& key, T defaultValue = T{}) {
     return defaultValue;
 }
 
+// Обработка одного JSON-объекта: обновление data и запись в файл
+void processJsonObject(const json& jdata, LocationData* data) {
+    {
+        std::lock_guard<std::mutex> lock(data->mtx);
+        data->latitude   = getJsonValue<float>(jdata, "latitude", 0.0f);
+        data->longitude  = getJsonValue<float>(jdata, "longitude", 0.0f);
+        data->altitude   = getJsonValue<float>(jdata, "altitude", 0.0f);
+        data->accuracy   = getJsonValue<float>(jdata, "accuracy", 0.0f);
+        data->timestamp  = getJsonValue<std::string>(jdata, "time", "");
+        data->networkType = getJsonValue<std::string>(jdata, "networkType", "Unknown");
+        data->networkOperator = getJsonValue<std::string>(jdata, "networkOperator", "");
+        data->networkOperatorName = getJsonValue<std::string>(jdata, "networkOperatorName", "");
+
+        data->lteCellId = getJsonValue<int>(jdata, "lteCellId", 0);
+        data->lteEarfcn = getJsonValue<int>(jdata, "lteEarfcn", 0);
+        data->lteMcc = getJsonValue<int>(jdata, "lteMcc", 0);
+        data->lteMnc = getJsonValue<int>(jdata, "lteMnc", 0);
+        data->ltePci = getJsonValue<int>(jdata, "ltePci", 0);
+        data->lteTac = getJsonValue<int>(jdata, "lteTac", 0);
+        data->lteAsuLevel = getJsonValue<int>(jdata, "lteAsuLevel", 0);
+        data->lteCqi = getJsonValue<int>(jdata, "lteCqi", 0);
+        data->lteRsrp = getJsonValue<int>(jdata, "lteRsrp", 0);
+        data->lteRsrq = getJsonValue<int>(jdata, "lteRsrq", 0);
+        data->lteRssi = getJsonValue<int>(jdata, "lteRssi", 0);
+        data->lteRssnr = getJsonValue<int>(jdata, "lteRssnr", 0);
+        data->lteTimingAdvance = getJsonValue<int>(jdata, "lteTimingAdvance", 0);
+
+        data->gsmCellId = getJsonValue<int>(jdata, "gsmCellId", 0);
+        data->gsmBsic = getJsonValue<int>(jdata, "gsmBsic", 0);
+        data->gsmArfcn = getJsonValue<int>(jdata, "gsmArfcn", 0);
+        data->gsmLac = getJsonValue<int>(jdata, "gsmLac", 0);
+        data->gsmMcc = getJsonValue<int>(jdata, "gsmMcc", 0);
+        data->gsmMnc = getJsonValue<int>(jdata, "gsmMnc", 0);
+        data->gsmPsc = getJsonValue<int>(jdata, "gsmPsc", 0);
+        data->gsmDbm = getJsonValue<int>(jdata, "gsmDbm", 0);
+        data->gsmTimingAdvance = getJsonValue<int>(jdata, "gsmTimingAdvance", 0);
+
+        data->nrBand = getJsonValue<int>(jdata, "nrBand", 0);
+        data->nrNci = getJsonValue<long>(jdata, "nrNci", 0L);
+        data->nrPci = getJsonValue<int>(jdata, "nrPci", 0);
+        data->nrNrarfcn = getJsonValue<int>(jdata, "nrNrarfcn", 0);
+        data->nrTac = getJsonValue<int>(jdata, "nrTac", 0);
+        data->nrMcc = getJsonValue<int>(jdata, "nrMcc", 0);
+        data->nrMnc = getJsonValue<int>(jdata, "nrMnc", 0);
+        data->nrSsRsrp = getJsonValue<int>(jdata, "nrSsRsrp", 0);
+        data->nrSsRsrq = getJsonValue<int>(jdata, "nrSsRsrq", 0);
+        data->nrSsSinr = getJsonValue<int>(jdata, "nrSsSinr", 0);
+        data->nrTimingAdvance = getJsonValue<int>(jdata, "nrTimingAdvance", 0);
+
+        if (data->networkType == "LTE") {
+            data->lteRsrpData.push_back(static_cast<float>(data->lteRsrp));
+            data->lteRsrqData.push_back(static_cast<float>(data->lteRsrq));
+            data->lteRssiData.push_back(static_cast<float>(data->lteRssi));
+            data->lteAsuData.push_back(data->lteAsuLevel);
+            data->lteCqiData.push_back(data->lteCqi);
+            data->lteRssnrData.push_back(static_cast<float>(data->lteRssnr));
+            data->lteTimingAdvanceData.push_back(data->lteTimingAdvance);
+            if (data->lteRsrpData.size() > 100) {
+                data->lteRsrpData.erase(data->lteRsrpData.begin());
+                data->lteRsrqData.erase(data->lteRsrqData.begin());
+                data->lteRssiData.erase(data->lteRssiData.begin());
+                data->lteAsuData.erase(data->lteAsuData.begin());
+                data->lteCqiData.erase(data->lteCqiData.begin());
+                data->lteRssnrData.erase(data->lteRssnrData.begin());
+                data->lteTimingAdvanceData.erase(data->lteTimingAdvanceData.begin());
+            }
+        } else if (data->networkType == "NR") {
+            data->nrSsRsrpData.push_back(static_cast<float>(data->nrSsRsrp));
+            data->nrSsRsrqData.push_back(static_cast<float>(data->nrSsRsrq));
+            data->nrSsSinrData.push_back(static_cast<float>(data->nrSsSinr));
+            data->nrTimingAdvanceData.push_back(static_cast<float>(data->nrTimingAdvance));
+            if (data->nrSsRsrpData.size() > 100) {
+                data->nrSsRsrpData.erase(data->nrSsRsrpData.begin());
+                data->nrSsRsrqData.erase(data->nrSsRsrqData.begin());
+                data->nrSsSinrData.erase(data->nrSsSinrData.begin());
+                data->nrTimingAdvanceData.erase(data->nrTimingAdvanceData.begin());
+            }
+        }
+    } // мьютекс отпущен
+
+    // Запись в файл (уже без блокировки)
+    json entry = {
+        {"latitude", data->latitude},
+        {"longitude", data->longitude},
+        {"altitude", data->altitude},
+        {"accuracy", data->accuracy},
+        {"time", data->timestamp},
+        {"networkType", data->networkType}
+    };
+    if (data->networkType == "LTE") {
+        entry["rsrp"] = data->lteRsrp;
+        entry["rsrq"] = data->lteRsrq;
+        entry["rssi"] = data->lteRssi;
+        entry["rssnr"] = data->lteRssnr;
+        entry["timingAdvance"] = data->lteTimingAdvance;
+        entry["cellId"] = data->lteCellId;
+        entry["earfcn"] = data->lteEarfcn;
+        entry["mcc"] = data->lteMcc;
+        entry["mnc"] = data->lteMnc;
+        entry["pci"] = data->ltePci;
+        entry["tac"] = data->lteTac;
+        entry["asuLevel"] = data->lteAsuLevel;
+        entry["cqi"] = data->lteCqi;
+    } else if (data->networkType == "NR") {
+        entry["band"] = data->nrBand;
+        entry["nrNci"] = data->nrNci;
+        entry["nrPci"] = data->nrPci;
+        entry["nrNrarfcn"] = data->nrNrarfcn;
+        entry["nrTac"] = data->nrTac;
+        entry["nrMcc"] = data->nrMcc;
+        entry["nrMnc"] = data->nrMnc;
+        entry["nrSsRsrp"] = data->nrSsRsrp;
+        entry["nrSsRsrq"] = data->nrSsRsrq;
+        entry["nrSsSinr"] = data->nrSsSinr;
+        entry["nrTimingAdvance"] = data->nrTimingAdvance;
+    } else if (data->networkType == "GSM") {
+        entry["cellId"] = data->gsmCellId;
+        entry["gsmBsic"] = data->gsmBsic;
+        entry["gsmArfcn"] = data->gsmArfcn;
+        entry["gsmLac"] = data->gsmLac;
+        entry["gsmMcc"] = data->gsmMcc;
+        entry["gsmMnc"] = data->gsmMnc;
+        entry["gsmPsc"] = data->gsmPsc;
+        entry["gsmDbm"] = data->gsmDbm;
+        entry["gsmTimingAdvance"] = data->gsmTimingAdvance;
+    }
+
+    std::ofstream file("locations.json", std::ios::app);
+    if (file.is_open()) {
+        file << entry.dump() << "\n";
+    }
+}
+
 void run_server(LocationData* data) {
     zmq::context_t ctx;
     zmq::socket_t sock(ctx, zmq::socket_type::rep);
     sock.bind("tcp://*:5555");
-    std::cout << " Сервер запущен на порту 5555\n";
-    
+    std::cout << "Сервер запущен на порту 5555\n";
+
     while (true) {
         try {
             zmq::message_t request;
@@ -93,114 +227,23 @@ void run_server(LocationData* data) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
-            
+
             std::string msg(static_cast<char*>(request.data()), request.size());
             auto jdata = json::parse(msg);
-            
-            {
-                std::lock_guard<std::mutex> lock(data->mtx);
-                
-                data->latitude   = getJsonValue<float>(jdata, "latitude", 0.0f);
-                data->longitude  = getJsonValue<float>(jdata, "longitude", 0.0f);
-                data->altitude   = getJsonValue<float>(jdata, "altitude", 0.0f);
-                data->accuracy   = getJsonValue<float>(jdata, "accuracy", 0.0f);
-                data->timestamp  = getJsonValue<std::string>(jdata, "time", "");
-                data->networkType = getJsonValue<std::string>(jdata, "networkType", "Unknown");
-                data->networkOperator = getJsonValue<std::string>(jdata, "networkOperator", "");
-                data->networkOperatorName = getJsonValue<std::string>(jdata, "networkOperatorName", "");
-                
-                data->lteCellId = getJsonValue<int>(jdata, "lteCellId", 0);
-                data->lteEarfcn = getJsonValue<int>(jdata, "lteEarfcn", 0);
-                data->lteMcc = getJsonValue<int>(jdata, "lteMcc", 0);
-                data->lteMnc = getJsonValue<int>(jdata, "lteMnc", 0);
-                data->ltePci = getJsonValue<int>(jdata, "ltePci", 0);
-                data->lteTac = getJsonValue<int>(jdata, "lteTac", 0);
-                data->lteAsuLevel = getJsonValue<int>(jdata, "lteAsuLevel", 0);
-                data->lteCqi = getJsonValue<int>(jdata, "lteCqi", 0);
-                data->lteRsrp = getJsonValue<int>(jdata, "lteRsrp", 0);
-                data->lteRsrq = getJsonValue<int>(jdata, "lteRsrq", 0);
-                data->lteRssi = getJsonValue<int>(jdata, "lteRssi", 0);
-                data->lteRssnr = getJsonValue<int>(jdata, "lteRssnr", 0);
-                data->lteTimingAdvance = getJsonValue<int>(jdata, "lteTimingAdvance", 0);
-                
-                data->gsmCellId = getJsonValue<int>(jdata, "gsmCellId", 0);
-                data->gsmBsic = getJsonValue<int>(jdata, "gsmBsic", 0);
-                data->gsmArfcn = getJsonValue<int>(jdata, "gsmArfcn", 0);
-                data->gsmLac = getJsonValue<int>(jdata, "gsmLac", 0);
-                data->gsmMcc = getJsonValue<int>(jdata, "gsmMcc", 0);
-                data->gsmMnc = getJsonValue<int>(jdata, "gsmMnc", 0);
-                data->gsmPsc = getJsonValue<int>(jdata, "gsmPsc", 0);
-                data->gsmDbm = getJsonValue<int>(jdata, "gsmDbm", 0);
-                data->gsmTimingAdvance = getJsonValue<int>(jdata, "gsmTimingAdvance", 0);
-                
-                data->nrBand = getJsonValue<int>(jdata, "nrBand", 0);
-                data->nrNci = getJsonValue<long>(jdata, "nrNci", 0L);
-                data->nrPci = getJsonValue<int>(jdata, "nrPci", 0);
-                data->nrNrarfcn = getJsonValue<int>(jdata, "nrNrarfcn", 0);
-                data->nrTac = getJsonValue<int>(jdata, "nrTac", 0);
-                data->nrMcc = getJsonValue<int>(jdata, "nrMcc", 0);
-                data->nrMnc = getJsonValue<int>(jdata, "nrMnc", 0);
-                data->nrSsRsrp = getJsonValue<int>(jdata, "nrSsRsrp", 0);
-                data->nrSsRsrq = getJsonValue<int>(jdata, "nrSsRsrq", 0);
-                data->nrSsSinr = getJsonValue<int>(jdata, "nrSsSinr", 0);
-                data->nrTimingAdvance = getJsonValue<int>(jdata, "nrTimingAdvance", 0);
-                
-                if (data->networkType == "LTE") {
-                    data->lteRsrpData.push_back(static_cast<float>(data->lteRsrp));
-                    data->lteRsrqData.push_back(static_cast<float>(data->lteRsrq));
-                    data->lteRssiData.push_back(static_cast<float>(data->lteRssi));
-                    data->lteAsuData.push_back(data->lteAsuLevel);
-                    data->lteCqiData.push_back(data->lteCqi);
-                    
-                    if (data->lteRsrpData.size() > 100) {
-                        data->lteRsrpData.erase(data->lteRsrpData.begin());
-                        data->lteRsrqData.erase(data->lteRsrqData.begin());
-                        data->lteRssiData.erase(data->lteRssiData.begin());
-                        data->lteAsuData.erase(data->lteAsuData.begin());
-                        data->lteCqiData.erase(data->lteCqiData.begin());
-                    }
-                }
-                else if (data->networkType == "NR") {
-                    data->nrSsRsrpData.push_back(static_cast<float>(data->nrSsRsrp));
-                    data->nrSsRsrqData.push_back(static_cast<float>(data->nrSsRsrq));
-                    data->nrSsSinrData.push_back(static_cast<float>(data->nrSsSinr));
-                    
-                    if (data->nrSsRsrpData.size() > 100) {
-                        data->nrSsRsrpData.erase(data->nrSsRsrpData.begin());
-                        data->nrSsRsrqData.erase(data->nrSsRsrqData.begin());
-                        data->nrSsSinrData.erase(data->nrSsSinrData.begin());
-                    }
-                }
-            }
-            
-            std::cout << "Данные: lat=" << data->latitude << " lon=" << data->longitude
-                      << " net=" << data->networkType << " RSRP=" << data->lteRsrp << " dBm\n";
-            {
-                std::lock_guard<std::mutex> lock(data->mtx);
-                json entry = {
-                    {"latitude", data->latitude},
-                    {"longitude", data->longitude},
-                    {"altitude", data->altitude},
-                    {"accuracy", data->accuracy},
-                    {"time", data->timestamp},
-                    {"networkType", data->networkType}
-                };
 
-                if (data->networkType == "LTE") {
-                    entry["rsrp"] = data->lteRsrp;
-                } else if (data->networkType == "NR") {
-                    entry["rsrp"] = data->nrSsRsrp;
-                } else {
-                    entry["rsrp"] = 0;
+            // Проверяем, массив это или объект
+            if (jdata.is_array()) {
+                for (const auto& item : jdata) {
+                    processJsonObject(item, data);
                 }
-    
-                std::ofstream file("locations.json", std::ios::app);
-                if (file.is_open()) file << entry.dump() << "\n";
+            } else {
+                processJsonObject(jdata, data);
             }
-            
+
+            std::cout << "Обработано сообщение" << std::endl;
             std::string reply = "ACK";
             sock.send(zmq::buffer(reply), zmq::send_flags::none);
-            
+
         } catch (const std::exception& e) {
             std::cerr << "Ошибка: " << e.what() << std::endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -295,31 +338,41 @@ void run_gui(LocationData* data) {
         {
             std::lock_guard<std::mutex> lock(data->mtx);
             if (data->networkType == "LTE" && !data->lteRsrpData.empty()) {
-                if (ImPlot::BeginPlot("LTE RSRP / RSRQ", "Time", "dBm", ImVec2(-1, 250))) {
+                if (ImPlot::BeginPlot("LTE RSRP / RSRQ / RSSI", "Time", "dBm", ImVec2(-1, 250))) {
                     ImPlot::PlotLine("RSRP", data->lteRsrpData.data(), data->lteRsrpData.size());
                     ImPlot::PlotLine("RSRQ", data->lteRsrqData.data(), data->lteRsrqData.size());
-                    ImPlot::EndPlot();
-                }
-                if (ImPlot::BeginPlot("LTE RSSI / ASU", "Time", "dBm / level", ImVec2(-1, 250))) {
                     ImPlot::PlotLine("RSSI", data->lteRssiData.data(), data->lteRssiData.size());
-                    ImPlot::PlotLine("ASU",  data->lteAsuData.data(), data->lteAsuData.size());
                     ImPlot::EndPlot();
                 }
-                if (ImPlot::BeginPlot("LTE CQI", "Time", "CQI", ImVec2(-1, 250))) {
+                if (ImPlot::BeginPlot("LTE ASU / CQI / RSSNR", "Time", "level / dB", ImVec2(-1, 250))) {
+                    ImPlot::PlotLine("ASU", data->lteAsuData.data(), data->lteAsuData.size());
                     ImPlot::PlotLine("CQI", data->lteCqiData.data(), data->lteCqiData.size());
+                    ImPlot::PlotLine("RSSNR", data->lteRssnrData.data(), data->lteRssnrData.size());
                     ImPlot::EndPlot();
+                }
+                if (!data->lteTimingAdvanceData.empty()) {
+                    if (ImPlot::BeginPlot("LTE Timing Advance", "Time", "TA (symbols)", ImVec2(-1, 150))) {
+                        ImPlot::PlotLine("TimingAdv", data->lteTimingAdvanceData.data(), data->lteTimingAdvanceData.size());
+                        ImPlot::EndPlot();
+                    }
                 }
             } else if (data->networkType == "NR" && !data->nrSsRsrpData.empty()) {
-                if (ImPlot::BeginPlot("NR Signal", "Time", "dBm / dB", ImVec2(-1, 400))) {
+                if (ImPlot::BeginPlot("NR Signal", "Time", "dBm / dB", ImVec2(-1, 300))) {
                     ImPlot::PlotLine("SS-RSRP", data->nrSsRsrpData.data(), data->nrSsRsrpData.size());
                     ImPlot::PlotLine("SS-RSRQ", data->nrSsRsrqData.data(), data->nrSsRsrqData.size());
                     ImPlot::PlotLine("SS-SINR", data->nrSsSinrData.data(), data->nrSsSinrData.size());
                     ImPlot::EndPlot();
                 }
+                if (!data->nrTimingAdvanceData.empty()) {
+                    if (ImPlot::BeginPlot("NR Timing Advance", "Time", "TA", ImVec2(-1, 150))) {
+                        ImPlot::PlotLine("TimingAdv", data->nrTimingAdvanceData.data(), data->nrTimingAdvanceData.size());
+                        ImPlot::EndPlot();
+                    }
+                }
             } else {
                 ImGui::Text("No data");
             }
-        }
+        }   
         ImGui::End();
         
         ImGui::Render();

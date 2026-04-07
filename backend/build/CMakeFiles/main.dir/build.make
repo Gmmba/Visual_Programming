@@ -99,6 +99,7 @@ main: /usr/lib/x86_64-linux-gnu/libOpenGL.so
 main: /usr/lib/x86_64-linux-gnu/libGLX.so
 main: /usr/lib/x86_64-linux-gnu/libGLU.so
 main: /usr/lib/x86_64-linux-gnu/libGLEW.so
+main: /usr/lib/x86_64-linux-gnu/libpq.so
 main: libimgui.a
 main: /usr/local/lib/libzmq.so.5.2.6
 main: CMakeFiles/main.dir/link.txt
