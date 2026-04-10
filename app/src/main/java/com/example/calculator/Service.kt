@@ -44,7 +44,7 @@ class Service : Service(), LocationListener {
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
     private var isRunning = false
-    private var isSendingPending = false   // предотвращает одновременную отправку архива
+    private var isSendingPending = false
 
     override fun onCreate() {
         super.onCreate()
@@ -89,7 +89,6 @@ class Service : Service(), LocationListener {
                 if (!isRunning) {
                     isRunning = true
                     startDataCollection()
-                    // При старте пробуем отправить всё, что накопилось
                     serviceScope.launch { sendPendingData() }
                     Log.d(TAG, "Сбор данных запущен")
                 }
@@ -144,16 +143,13 @@ class Service : Service(), LocationListener {
 
             if (success) {
                 Log.d(TAG, "Данные отправлены: lat=${location.latitude}, lon=${location.longitude}")
-                // После успешной отправки текущей точки пробуем отправить архив
                 sendPendingData()
             } else {
-                // Сохраняем в файл для последующей отправки
                 saveDataToFile(json.toString())
                 Log.d(TAG, "Данные сохранены в файл (сервер недоступен)")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Ошибка сбора/отправки: ${e.message}", e)
-            // При ошибке тоже сохраняем, чтобы не потерять
             try {
                 val networkData = getNetworkData()
                 val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
@@ -163,6 +159,122 @@ class Service : Service(), LocationListener {
                 Log.e(TAG, "Не удалось даже сохранить в файл: ${ex.message}")
             }
         }
+    }
+
+    // ======================= НОВАЯ ЛОГИКА СБОРА ВСЕХ СОТ =======================
+    @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+    private fun getNetworkData(): Map<String, Any?> {
+        val data = mutableMapOf<String, Any?>()
+        data["networkType"] = "Unknown"
+        data["cells"] = mutableListOf<Map<String, Any?>>()   // список сот
+
+        try {
+            val cellInfoList = telephonyManager.allCellInfo
+            if (cellInfoList != null && cellInfoList.isNotEmpty()) {
+                for (cellInfo in cellInfoList) {
+                    when (cellInfo) {
+                        is CellInfoLte -> {
+                            val id = cellInfo.cellIdentity
+                            val sig = cellInfo.cellSignalStrength
+                            val pci = if (id.pci != Int.MAX_VALUE) id.pci else 0
+                            if (pci == 0) continue
+
+                            val cell = mutableMapOf<String, Any?>()
+                            cell["type"] = "LTE"
+                            cell["pci"] = pci
+                            cell["rsrp"] = if (sig.rsrp != Int.MAX_VALUE) sig.rsrp else 0
+                            cell["rsrq"] = if (sig.rsrq != Int.MAX_VALUE) sig.rsrq else 0
+                            cell["rssi"] = if (sig.rssi != Int.MAX_VALUE) sig.rssi else 0
+                            cell["rssnr"] = if (sig.rssnr != Int.MAX_VALUE) sig.rssnr else 0
+                            cell["timingAdvance"] = if (sig.timingAdvance != Int.MAX_VALUE) sig.timingAdvance else 0
+                            cell["asuLevel"] = if (sig.asuLevel != Int.MAX_VALUE) sig.asuLevel else 0
+                            cell["cqi"] = if (sig.cqi != Int.MAX_VALUE) sig.cqi else 0
+                            (data["cells"] as MutableList<Map<String, Any?>>).add(cell)
+
+                            // Сохраняем также первую соту в старые поля (для совместимости)
+                            if ((data["cells"] as MutableList<*>).size == 1) {
+                                data["lteCellId"] = if (id.ci != Int.MAX_VALUE) id.ci.toInt() else 0
+                                data["lteEarfcn"] = if (id.earfcn != Int.MAX_VALUE) id.earfcn else 0
+                                data["lteMcc"] = if (id.mcc != Int.MAX_VALUE) id.mcc else 0
+                                data["lteMnc"] = if (id.mnc != Int.MAX_VALUE) id.mnc else 0
+                                data["ltePci"] = pci
+                                data["lteTac"] = if (id.tac != Int.MAX_VALUE) id.tac else 0
+                                data["lteAsuLevel"] = cell["asuLevel"] ?: 0
+                                data["lteCqi"] = cell["cqi"] ?: 0
+                                data["lteRsrp"] = cell["rsrp"] ?: 0
+                                data["lteRsrq"] = cell["rsrq"] ?: 0
+                                data["lteRssi"] = cell["rssi"] ?: 0
+                                data["lteRssnr"] = cell["rssnr"] ?: 0
+                                data["lteTimingAdvance"] = cell["timingAdvance"] ?: 0
+                            }
+                        }
+                        is CellInfoNr -> {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                val id = cellInfo.cellIdentity as CellIdentityNr
+                                val sig = cellInfo.cellSignalStrength as CellSignalStrengthNr
+                                val pci = if (id.pci != Int.MAX_VALUE) id.pci else 0
+                                if (pci == 0) continue
+
+                                val cell = mutableMapOf<String, Any?>()
+                                cell["type"] = "NR"
+                                cell["pci"] = pci
+                                cell["ssRsrp"] = if (sig.ssRsrp != Int.MAX_VALUE) sig.ssRsrp else 0
+                                cell["ssRsrq"] = if (sig.ssRsrq != Int.MAX_VALUE) sig.ssRsrq else 0
+                                cell["ssSinr"] = if (sig.ssSinr != Int.MAX_VALUE) sig.ssSinr else 0
+                                (data["cells"] as MutableList<Map<String, Any?>>).add(cell)
+
+                                if ((data["cells"] as MutableList<*>).size == 1) {
+                                    data["nrBand"] = if (Build.VERSION.SDK_INT >= 30 && id.bands?.isNotEmpty() == true) id.bands!![0] else 0
+                                    data["nrNci"] = if (id.nci != Long.MAX_VALUE) id.nci else 0
+                                    data["nrPci"] = pci
+                                    data["nrNrarfcn"] = if (id.nrarfcn != Int.MAX_VALUE) id.nrarfcn else 0
+                                    data["nrTac"] = if (id.tac != Int.MAX_VALUE) id.tac else 0
+                                    data["nrMcc"] = id.mccString?.toIntOrNull() ?: 0
+                                    data["nrMnc"] = id.mncString?.toIntOrNull() ?: 0
+                                    data["nrSsRsrp"] = cell["ssRsrp"] ?: 0
+                                    data["nrSsRsrq"] = cell["ssRsrq"] ?: 0
+                                    data["nrSsSinr"] = cell["ssSinr"] ?: 0
+                                }
+                            }
+                        }
+                        is CellInfoGsm -> {
+                            val id = cellInfo.cellIdentity
+                            val sig = cellInfo.cellSignalStrength
+                            val cell = mutableMapOf<String, Any?>()
+                            cell["type"] = "GSM"
+                            cell["cellId"] = if (id.cid != Int.MAX_VALUE) id.cid else 0
+                            cell["arfcn"] = if (id.arfcn != Int.MAX_VALUE) id.arfcn else 0
+                            cell["bsic"] = if (id.bsic != Int.MAX_VALUE) id.bsic else 0
+                            cell["lac"] = if (id.lac != Int.MAX_VALUE) id.lac else 0
+                            cell["dbm"] = if (sig.dbm != Int.MAX_VALUE) sig.dbm else 0
+                            cell["timingAdvance"] = if (sig.timingAdvance != Int.MAX_VALUE) sig.timingAdvance else 0
+                            (data["cells"] as MutableList<Map<String, Any?>>).add(cell)
+
+                            if ((data["cells"] as MutableList<*>).size == 1) {
+                                data["gsmCellId"] = cell["cellId"] ?: 0
+                                data["gsmArfcn"] = cell["arfcn"] ?: 0
+                                data["gsmBsic"] = cell["bsic"] ?: 0
+                                data["gsmLac"] = cell["lac"] ?: 0
+                                data["gsmDbm"] = cell["dbm"] ?: 0
+                                data["gsmTimingAdvance"] = cell["timingAdvance"] ?: 0
+                                data["gsmMcc"] = if (id.mcc != Int.MAX_VALUE) id.mcc else 0
+                                data["gsmMnc"] = if (id.mnc != Int.MAX_VALUE) id.mnc else 0
+                            }
+                        }
+                    }
+                }
+            }
+            // Определяем общий тип сети (по первой соте)
+            if ((data["cells"] as MutableList<*>).isNotEmpty()) {
+                val firstCellType = ((data["cells"] as MutableList<Map<String, Any?>>)[0]["type"] as String)
+                data["networkType"] = firstCellType
+            }
+            data["networkOperator"] = telephonyManager.networkOperator ?: ""
+            data["networkOperatorName"] = telephonyManager.networkOperatorName ?: ""
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка получения сетевых данных: ${e.message}", e)
+        }
+        return data
     }
 
     private fun buildJson(location: Location, networkData: Map<String, Any?>, time: String): JSONObject {
@@ -176,7 +288,7 @@ class Service : Service(), LocationListener {
             put("networkOperator", networkData["networkOperator"]?.toString() ?: "")
             put("networkOperatorName", networkData["networkOperatorName"]?.toString() ?: "")
 
-            // LTE
+            // Старые поля (для обратной совместимости)
             put("lteCellId", getLongValue(networkData["lteCellId"]))
             put("lteEarfcn", getIntValue(networkData["lteEarfcn"]))
             put("lteMcc", getIntValue(networkData["lteMcc"]))
@@ -191,7 +303,6 @@ class Service : Service(), LocationListener {
             put("lteRssnr", getIntValue(networkData["lteRssnr"]))
             put("lteTimingAdvance", getIntValue(networkData["lteTimingAdvance"]))
 
-            // GSM
             put("gsmCellId", getIntValue(networkData["gsmCellId"]))
             put("gsmBsic", getIntValue(networkData["gsmBsic"]))
             put("gsmArfcn", getIntValue(networkData["gsmArfcn"]))
@@ -202,7 +313,6 @@ class Service : Service(), LocationListener {
             put("gsmDbm", getIntValue(networkData["gsmDbm"]))
             put("gsmTimingAdvance", getIntValue(networkData["gsmTimingAdvance"]))
 
-            // NR
             put("nrBand", getIntValue(networkData["nrBand"]))
             put("nrNci", getLongValue(networkData["nrNci"]))
             put("nrPci", getIntValue(networkData["nrPci"]))
@@ -213,82 +323,25 @@ class Service : Service(), LocationListener {
             put("nrSsRsrp", getIntValue(networkData["nrSsRsrp"]))
             put("nrSsRsrq", getIntValue(networkData["nrSsRsrq"]))
             put("nrSsSinr", getIntValue(networkData["nrSsSinr"]))
-            put("nrTimingAdvance", getIntValue(networkData["nrTimingAdvance"]))
-        }
-    }
 
-    @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-    private fun getNetworkData(): Map<String, Any?> {
-        val data = mutableMapOf<String, Any?>()
-        data["networkType"] = "Unknown"
-
-        try {
-            val cellInfoList = telephonyManager.allCellInfo
-            if (cellInfoList != null && cellInfoList.isNotEmpty()) {
-                for (cellInfo in cellInfoList) {
-                    when (cellInfo) {
-                        is CellInfoLte -> {
-                            val id = cellInfo.cellIdentity
-                            val sig = cellInfo.cellSignalStrength
-                            data["networkType"] = "LTE"
-                            data["lteCellId"] = if (id.ci != Int.MAX_VALUE) id.ci.toInt() else 0
-                            data["lteEarfcn"] = if (id.earfcn != Int.MAX_VALUE) id.earfcn else 0
-                            data["lteMcc"] = if (id.mcc != Int.MAX_VALUE) id.mcc else 0
-                            data["lteMnc"] = if (id.mnc != Int.MAX_VALUE) id.mnc else 0
-                            data["ltePci"] = if (id.pci != Int.MAX_VALUE) id.pci else 0
-                            data["lteTac"] = if (id.tac != Int.MAX_VALUE) id.tac else 0
-                            data["lteAsuLevel"] = if (sig.asuLevel != Int.MAX_VALUE) sig.asuLevel else 0
-                            data["lteCqi"] = if (sig.cqi != Int.MAX_VALUE) sig.cqi else 0
-                            data["lteRsrp"] = if (sig.rsrp != Int.MAX_VALUE) sig.rsrp else 0
-                            data["lteRsrq"] = if (sig.rsrq != Int.MAX_VALUE) sig.rsrq else 0
-                            data["lteRssi"] = if (sig.rssi != Int.MAX_VALUE) sig.rssi else 0
-                            data["lteRssnr"] = if (sig.rssnr != Int.MAX_VALUE) sig.rssnr else 0
-                            data["lteTimingAdvance"] = if (sig.timingAdvance != Int.MAX_VALUE) sig.timingAdvance else 0
-                            break
-                        }
-                        is CellInfoGsm -> {
-                            val id = cellInfo.cellIdentity
-                            val sig = cellInfo.cellSignalStrength
-                            data["networkType"] = "GSM"
-                            data["gsmCellId"] = if (id.cid != Int.MAX_VALUE) id.cid else 0
-                            data["gsmBsic"] = if (id.bsic != Int.MAX_VALUE) id.bsic else 0
-                            data["gsmArfcn"] = if (id.arfcn != Int.MAX_VALUE) id.arfcn else 0
-                            data["gsmLac"] = if (id.lac != Int.MAX_VALUE) id.lac else 0
-                            data["gsmMcc"] = if (id.mcc != Int.MAX_VALUE) id.mcc else 0
-                            data["gsmMnc"] = if (id.mnc != Int.MAX_VALUE) id.mnc else 0
-                            data["gsmPsc"] = if (id.psc != Int.MAX_VALUE) id.psc else 0
-                            data["gsmDbm"] = if (sig.dbm != Int.MAX_VALUE) sig.dbm else 0
-                            data["gsmTimingAdvance"] = if (sig.timingAdvance != Int.MAX_VALUE) sig.timingAdvance else 0
-                            break
-                        }
-                        is CellInfoNr -> {
-                            val id = cellInfo.cellIdentity as CellIdentityNr
-                            val sig = cellInfo.cellSignalStrength as CellSignalStrengthNr
-                            data["networkType"] = "NR"
-                            data["nrBand"] = if (Build.VERSION.SDK_INT >= 30 && id.bands?.isNotEmpty() == true) id.bands!![0] else 0
-                            data["nrNci"] = if (id.nci != Long.MAX_VALUE) id.nci else 0
-                            data["nrPci"] = if (id.pci != Int.MAX_VALUE) id.pci else 0
-                            data["nrNrarfcn"] = if (id.nrarfcn != Int.MAX_VALUE) id.nrarfcn else 0
-                            data["nrTac"] = if (id.tac != Int.MAX_VALUE) id.tac else 0
-                            data["nrMcc"] = id.mccString?.toIntOrNull() ?: 0
-                            data["nrMnc"] = id.mncString?.toIntOrNull() ?: 0
-                            data["nrSsRsrp"] = if (sig.ssRsrp != Int.MAX_VALUE) sig.ssRsrp else 0
-                            data["nrSsRsrq"] = if (sig.ssRsrq != Int.MAX_VALUE) sig.ssRsrq else 0
-                            data["nrSsSinr"] = if (sig.ssSinr != Int.MAX_VALUE) sig.ssSinr else 0
-                            break
+            // НОВОЕ: массив сот
+            val cellsArray = JSONArray()
+            (networkData["cells"] as? List<*>)?.forEach { cellMap ->
+                if (cellMap is Map<*, *>) {
+                    val cellJson = JSONObject()
+                    for ((key, value) in cellMap) {
+                        if (key is String) {
+                            cellJson.put(key, value)
                         }
                     }
+                    cellsArray.put(cellJson)
                 }
             }
-            data["networkOperator"] = telephonyManager.networkOperator ?: ""
-            data["networkOperatorName"] = telephonyManager.networkOperatorName ?: ""
-        } catch (e: Exception) {
-            Log.e(TAG, "Ошибка получения сетевых данных: ${e.message}", e)
+            put("cells", cellsArray)
         }
-        return data
     }
 
-    // ------------------- Работа с файлом -------------------
+    // ------------------- Работа с файлом и отправка (без изменений) -------------------
     private fun getDataFile(): File = File(filesDir, DATA_FILE_NAME)
 
     private fun saveDataToFile(jsonLine: String) {
@@ -324,9 +377,7 @@ class Service : Service(), LocationListener {
         try {
             val pendingList = loadAllData()
             if (pendingList.isEmpty()) return
-
             Log.d(TAG, "Найдено ${pendingList.size} отложенных записей, отправляем...")
-            // Отправляем одним массивом для экономии запросов
             val success = sendBatchToServer(pendingList)
             if (success) {
                 clearDataFile()
@@ -352,7 +403,6 @@ class Service : Service(), LocationListener {
         return sendJsonToServer(jsonArray.toString())
     }
 
-    // ------------------- Отправка через ZMQ -------------------
     private suspend fun sendJsonToServer(jsonString: String): Boolean {
         return withContext(Dispatchers.IO) {
             var context: ZContext? = null
@@ -360,13 +410,11 @@ class Service : Service(), LocationListener {
             try {
                 val SERVER_IP = "192.168.43.34"
                 val SERVER_PORT = 5555
-
                 context = ZContext()
                 socket = context.createSocket(ZMQ.REQ)
-                socket.receiveTimeOut = 3000   // 3 секунды
+                socket.receiveTimeOut = 3000
                 socket.sendTimeOut = 3000
                 socket.connect("tcp://$SERVER_IP:$SERVER_PORT")
-
                 socket.send(jsonString.toByteArray(Charsets.UTF_8))
                 val reply = socket.recvStr()
                 reply != null && reply == "ACK"
@@ -380,7 +428,6 @@ class Service : Service(), LocationListener {
         }
     }
 
-    // Вспомогательные преобразователи
     private fun getIntValue(value: Any?): Int = when (value) {
         is Int -> value
         is Long -> value.toInt()

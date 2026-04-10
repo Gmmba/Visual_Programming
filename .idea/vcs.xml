@@ -7,7 +7,7 @@
     <mapping directory="$PROJECT_DIR$/backend/libzmq" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/backend/third_party/imgui" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/backend/third_party/implot" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/backend/third_party/implot/implot" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backend/third_party/third_party/implot" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/third_party/imgui" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/third_party/implot" vcs="Git" />
   </component>
