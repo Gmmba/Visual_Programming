@@ -83,14 +83,78 @@ CMakeFiles/main.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/main.dir/src/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Visual_Programming/Visual_Programming/backend/src/main.cpp -o CMakeFiles/main.dir/src/main.cpp.s
 
+CMakeFiles/main.dir/src/tile_map.cpp.o: CMakeFiles/main.dir/flags.make
+CMakeFiles/main.dir/src/tile_map.cpp.o: /mnt/c/Visual_Programming/Visual_Programming/backend/src/tile_map.cpp
+CMakeFiles/main.dir/src/tile_map.cpp.o: CMakeFiles/main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/main.dir/src/tile_map.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/main.dir/src/tile_map.cpp.o -MF CMakeFiles/main.dir/src/tile_map.cpp.o.d -o CMakeFiles/main.dir/src/tile_map.cpp.o -c /mnt/c/Visual_Programming/Visual_Programming/backend/src/tile_map.cpp
+
+CMakeFiles/main.dir/src/tile_map.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/main.dir/src/tile_map.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/Visual_Programming/Visual_Programming/backend/src/tile_map.cpp > CMakeFiles/main.dir/src/tile_map.cpp.i
+
+CMakeFiles/main.dir/src/tile_map.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/main.dir/src/tile_map.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Visual_Programming/Visual_Programming/backend/src/tile_map.cpp -o CMakeFiles/main.dir/src/tile_map.cpp.s
+
+CMakeFiles/main.dir/src/db_manager.cpp.o: CMakeFiles/main.dir/flags.make
+CMakeFiles/main.dir/src/db_manager.cpp.o: /mnt/c/Visual_Programming/Visual_Programming/backend/src/db_manager.cpp
+CMakeFiles/main.dir/src/db_manager.cpp.o: CMakeFiles/main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/main.dir/src/db_manager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/main.dir/src/db_manager.cpp.o -MF CMakeFiles/main.dir/src/db_manager.cpp.o.d -o CMakeFiles/main.dir/src/db_manager.cpp.o -c /mnt/c/Visual_Programming/Visual_Programming/backend/src/db_manager.cpp
+
+CMakeFiles/main.dir/src/db_manager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/main.dir/src/db_manager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/Visual_Programming/Visual_Programming/backend/src/db_manager.cpp > CMakeFiles/main.dir/src/db_manager.cpp.i
+
+CMakeFiles/main.dir/src/db_manager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/main.dir/src/db_manager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Visual_Programming/Visual_Programming/backend/src/db_manager.cpp -o CMakeFiles/main.dir/src/db_manager.cpp.s
+
+CMakeFiles/main.dir/src/zmq_server.cpp.o: CMakeFiles/main.dir/flags.make
+CMakeFiles/main.dir/src/zmq_server.cpp.o: /mnt/c/Visual_Programming/Visual_Programming/backend/src/zmq_server.cpp
+CMakeFiles/main.dir/src/zmq_server.cpp.o: CMakeFiles/main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/main.dir/src/zmq_server.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/main.dir/src/zmq_server.cpp.o -MF CMakeFiles/main.dir/src/zmq_server.cpp.o.d -o CMakeFiles/main.dir/src/zmq_server.cpp.o -c /mnt/c/Visual_Programming/Visual_Programming/backend/src/zmq_server.cpp
+
+CMakeFiles/main.dir/src/zmq_server.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/main.dir/src/zmq_server.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/Visual_Programming/Visual_Programming/backend/src/zmq_server.cpp > CMakeFiles/main.dir/src/zmq_server.cpp.i
+
+CMakeFiles/main.dir/src/zmq_server.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/main.dir/src/zmq_server.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Visual_Programming/Visual_Programming/backend/src/zmq_server.cpp -o CMakeFiles/main.dir/src/zmq_server.cpp.s
+
+CMakeFiles/main.dir/src/gui.cpp.o: CMakeFiles/main.dir/flags.make
+CMakeFiles/main.dir/src/gui.cpp.o: /mnt/c/Visual_Programming/Visual_Programming/backend/src/gui.cpp
+CMakeFiles/main.dir/src/gui.cpp.o: CMakeFiles/main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/main.dir/src/gui.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/main.dir/src/gui.cpp.o -MF CMakeFiles/main.dir/src/gui.cpp.o.d -o CMakeFiles/main.dir/src/gui.cpp.o -c /mnt/c/Visual_Programming/Visual_Programming/backend/src/gui.cpp
+
+CMakeFiles/main.dir/src/gui.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/main.dir/src/gui.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/Visual_Programming/Visual_Programming/backend/src/gui.cpp > CMakeFiles/main.dir/src/gui.cpp.i
+
+CMakeFiles/main.dir/src/gui.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/main.dir/src/gui.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Visual_Programming/Visual_Programming/backend/src/gui.cpp -o CMakeFiles/main.dir/src/gui.cpp.s
+
 # Object files for target main
 main_OBJECTS = \
-"CMakeFiles/main.dir/src/main.cpp.o"
+"CMakeFiles/main.dir/src/main.cpp.o" \
+"CMakeFiles/main.dir/src/tile_map.cpp.o" \
+"CMakeFiles/main.dir/src/db_manager.cpp.o" \
+"CMakeFiles/main.dir/src/zmq_server.cpp.o" \
+"CMakeFiles/main.dir/src/gui.cpp.o"
 
 # External object files for target main
 main_EXTERNAL_OBJECTS =
 
 main: CMakeFiles/main.dir/src/main.cpp.o
+main: CMakeFiles/main.dir/src/tile_map.cpp.o
+main: CMakeFiles/main.dir/src/db_manager.cpp.o
+main: CMakeFiles/main.dir/src/zmq_server.cpp.o
+main: CMakeFiles/main.dir/src/gui.cpp.o
 main: CMakeFiles/main.dir/build.make
 main: libimgui.a
 main: libimplot.a
@@ -100,10 +164,11 @@ main: /usr/lib/x86_64-linux-gnu/libGLX.so
 main: /usr/lib/x86_64-linux-gnu/libGLU.so
 main: /usr/lib/x86_64-linux-gnu/libGLEW.so
 main: /usr/lib/x86_64-linux-gnu/libpq.so
+main: /usr/lib/x86_64-linux-gnu/libcurl.so
 main: libimgui.a
 main: /usr/local/lib/libzmq.so.5.2.6
 main: CMakeFiles/main.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable main"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/mnt/c/Visual_Programming/Visual_Programming/backend/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable main"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/main.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

@@ -9,6 +9,7 @@ include_directories(${SDL2_INCLUDE_DIRS})
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(CURL REQUIRED)
 pkg_check_modules(ZMQ REQUIRED libzmq)
 find_package(cppzmq REQUIRED)
 find_package(PostgreSQL REQUIRED)
@@ -20,8 +21,10 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/include
     ${THIRD_PARTY}/imgui
     ${THIRD_PARTY}/implot
+    ${THIRD_PARTY}
     ${PQXX_INCLUDE_DIRS}
     ${PQ_INCLUDE_DIRS}
+    ${CURL_INCLUDE_DIRS}
 )
 
 add_library(imgui STATIC
@@ -45,7 +48,14 @@ target_include_directories(implot PUBLIC ${THIRD_PARTY}/implot)
 target_link_libraries(implot PRIVATE imgui)
 target_compile_options(implot PRIVATE -fPIC)
 
-add_executable(main src/main.cpp)
+add_executable(main
+    src/main.cpp
+    src/tile_map.cpp
+    src/db_manager.cpp
+    src/zmq_server.cpp
+    src/gui.cpp
+)
+target_include_directories(main PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(main PRIVATE
     imgui
     implot
@@ -57,6 +67,7 @@ target_link_libraries(main PRIVATE
     PostgreSQL::PostgreSQL
     ${PQXX_LIBRARIES}
     ${PQ_LIBRARIES}
+    ${CURL_LIBRARIES}
 )
 
 link_directories(${PQXX_LIBRARY_DIRS})

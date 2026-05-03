@@ -155,6 +155,54 @@ main/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
 .PHONY : main/fast
 
+src/db_manager.o: src/db_manager.cpp.o
+.PHONY : src/db_manager.o
+
+# target to build an object file
+src/db_manager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/db_manager.cpp.o
+.PHONY : src/db_manager.cpp.o
+
+src/db_manager.i: src/db_manager.cpp.i
+.PHONY : src/db_manager.i
+
+# target to preprocess a source file
+src/db_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/db_manager.cpp.i
+.PHONY : src/db_manager.cpp.i
+
+src/db_manager.s: src/db_manager.cpp.s
+.PHONY : src/db_manager.s
+
+# target to generate assembly for a file
+src/db_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/db_manager.cpp.s
+.PHONY : src/db_manager.cpp.s
+
+src/gui.o: src/gui.cpp.o
+.PHONY : src/gui.o
+
+# target to build an object file
+src/gui.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/gui.cpp.o
+.PHONY : src/gui.cpp.o
+
+src/gui.i: src/gui.cpp.i
+.PHONY : src/gui.i
+
+# target to preprocess a source file
+src/gui.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/gui.cpp.i
+.PHONY : src/gui.cpp.i
+
+src/gui.s: src/gui.cpp.s
+.PHONY : src/gui.s
+
+# target to generate assembly for a file
+src/gui.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/gui.cpp.s
+.PHONY : src/gui.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -178,6 +226,54 @@ src/main.s: src/main.cpp.s
 src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
+
+src/tile_map.o: src/tile_map.cpp.o
+.PHONY : src/tile_map.o
+
+# target to build an object file
+src/tile_map.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/tile_map.cpp.o
+.PHONY : src/tile_map.cpp.o
+
+src/tile_map.i: src/tile_map.cpp.i
+.PHONY : src/tile_map.i
+
+# target to preprocess a source file
+src/tile_map.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/tile_map.cpp.i
+.PHONY : src/tile_map.cpp.i
+
+src/tile_map.s: src/tile_map.cpp.s
+.PHONY : src/tile_map.s
+
+# target to generate assembly for a file
+src/tile_map.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/tile_map.cpp.s
+.PHONY : src/tile_map.cpp.s
+
+src/zmq_server.o: src/zmq_server.cpp.o
+.PHONY : src/zmq_server.o
+
+# target to build an object file
+src/zmq_server.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/zmq_server.cpp.o
+.PHONY : src/zmq_server.cpp.o
+
+src/zmq_server.i: src/zmq_server.cpp.i
+.PHONY : src/zmq_server.i
+
+# target to preprocess a source file
+src/zmq_server.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/zmq_server.cpp.i
+.PHONY : src/zmq_server.cpp.i
+
+src/zmq_server.s: src/zmq_server.cpp.s
+.PHONY : src/zmq_server.s
+
+# target to generate assembly for a file
+src/zmq_server.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/zmq_server.cpp.s
+.PHONY : src/zmq_server.cpp.s
 
 third_party/imgui/backends/imgui_impl_opengl3.o: third_party/imgui/backends/imgui_impl_opengl3.cpp.o
 .PHONY : third_party/imgui/backends/imgui_impl_opengl3.o
@@ -430,9 +526,21 @@ help:
 	@echo "... imgui"
 	@echo "... implot"
 	@echo "... main"
+	@echo "... src/db_manager.o"
+	@echo "... src/db_manager.i"
+	@echo "... src/db_manager.s"
+	@echo "... src/gui.o"
+	@echo "... src/gui.i"
+	@echo "... src/gui.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/tile_map.o"
+	@echo "... src/tile_map.i"
+	@echo "... src/tile_map.s"
+	@echo "... src/zmq_server.o"
+	@echo "... src/zmq_server.i"
+	@echo "... src/zmq_server.s"
 	@echo "... third_party/imgui/backends/imgui_impl_opengl3.o"
 	@echo "... third_party/imgui/backends/imgui_impl_opengl3.i"
 	@echo "... third_party/imgui/backends/imgui_impl_opengl3.s"

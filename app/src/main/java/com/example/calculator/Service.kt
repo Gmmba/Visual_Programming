@@ -134,39 +134,34 @@ class Service : Service(), LocationListener {
         try {
             val networkData = getNetworkData()
             val currentTime = System.currentTimeMillis()
-            val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+            val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
             formatter.timeZone = TimeZone.getDefault()
             val formattedTime = formatter.format(Date(currentTime))
 
-            val json = buildJson(location, networkData, formattedTime)
-            val success = sendJsonToServer(json.toString())
+            val json = buildJson(location, networkData, formattedTime).toString()
+
+            saveDataToFile(json)
+
+            val success = sendJsonToServer(json)
 
             if (success) {
-                Log.d(TAG, "Данные отправлены: lat=${location.latitude}, lon=${location.longitude}")
-                sendPendingData()
+                Log.d(TAG, "Данные отправлены: time=$formattedTime")
+                serviceScope.launch {
+                    sendPendingData()
+                }
             } else {
-                saveDataToFile(json.toString())
-                Log.d(TAG, "Данные сохранены в файл (сервер недоступен)")
+                Log.w(TAG, "Сервер недоступен, данные в файле")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка сбора/отправки: ${e.message}", e)
-            try {
-                val networkData = getNetworkData()
-                val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
-                val json = buildJson(location, networkData, formatter.format(Date()))
-                saveDataToFile(json.toString())
-            } catch (ex: Exception) {
-                Log.e(TAG, "Не удалось даже сохранить в файл: ${ex.message}")
-            }
+            Log.e(TAG, "Ошибка: ${e.message}", e)
         }
     }
 
-    // ======================= НОВАЯ ЛОГИКА СБОРА ВСЕХ СОТ =======================
     @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     private fun getNetworkData(): Map<String, Any?> {
         val data = mutableMapOf<String, Any?>()
         data["networkType"] = "Unknown"
-        data["cells"] = mutableListOf<Map<String, Any?>>()   // список сот
+        data["cells"] = mutableListOf<Map<String, Any?>>()
 
         try {
             val cellInfoList = telephonyManager.allCellInfo
@@ -190,8 +185,6 @@ class Service : Service(), LocationListener {
                             cell["asuLevel"] = if (sig.asuLevel != Int.MAX_VALUE) sig.asuLevel else 0
                             cell["cqi"] = if (sig.cqi != Int.MAX_VALUE) sig.cqi else 0
                             (data["cells"] as MutableList<Map<String, Any?>>).add(cell)
-
-                            // Сохраняем также первую соту в старые поля (для совместимости)
                             if ((data["cells"] as MutableList<*>).size == 1) {
                                 data["lteCellId"] = if (id.ci != Int.MAX_VALUE) id.ci.toInt() else 0
                                 data["lteEarfcn"] = if (id.earfcn != Int.MAX_VALUE) id.earfcn else 0
@@ -264,7 +257,6 @@ class Service : Service(), LocationListener {
                     }
                 }
             }
-            // Определяем общий тип сети (по первой соте)
             if ((data["cells"] as MutableList<*>).isNotEmpty()) {
                 val firstCellType = ((data["cells"] as MutableList<Map<String, Any?>>)[0]["type"] as String)
                 data["networkType"] = firstCellType
@@ -287,8 +279,6 @@ class Service : Service(), LocationListener {
             put("networkType", networkData["networkType"]?.toString() ?: "Unknown")
             put("networkOperator", networkData["networkOperator"]?.toString() ?: "")
             put("networkOperatorName", networkData["networkOperatorName"]?.toString() ?: "")
-
-            // Старые поля (для обратной совместимости)
             put("lteCellId", getLongValue(networkData["lteCellId"]))
             put("lteEarfcn", getIntValue(networkData["lteEarfcn"]))
             put("lteMcc", getIntValue(networkData["lteMcc"]))
@@ -302,7 +292,6 @@ class Service : Service(), LocationListener {
             put("lteRssi", getIntValue(networkData["lteRssi"]))
             put("lteRssnr", getIntValue(networkData["lteRssnr"]))
             put("lteTimingAdvance", getIntValue(networkData["lteTimingAdvance"]))
-
             put("gsmCellId", getIntValue(networkData["gsmCellId"]))
             put("gsmBsic", getIntValue(networkData["gsmBsic"]))
             put("gsmArfcn", getIntValue(networkData["gsmArfcn"]))
@@ -312,7 +301,6 @@ class Service : Service(), LocationListener {
             put("gsmPsc", getIntValue(networkData["gsmPsc"]))
             put("gsmDbm", getIntValue(networkData["gsmDbm"]))
             put("gsmTimingAdvance", getIntValue(networkData["gsmTimingAdvance"]))
-
             put("nrBand", getIntValue(networkData["nrBand"]))
             put("nrNci", getLongValue(networkData["nrNci"]))
             put("nrPci", getIntValue(networkData["nrPci"]))
@@ -323,8 +311,6 @@ class Service : Service(), LocationListener {
             put("nrSsRsrp", getIntValue(networkData["nrSsRsrp"]))
             put("nrSsRsrq", getIntValue(networkData["nrSsRsrq"]))
             put("nrSsSinr", getIntValue(networkData["nrSsSinr"]))
-
-            // НОВОЕ: массив сот
             val cellsArray = JSONArray()
             (networkData["cells"] as? List<*>)?.forEach { cellMap ->
                 if (cellMap is Map<*, *>) {
@@ -341,7 +327,6 @@ class Service : Service(), LocationListener {
         }
     }
 
-    // ------------------- Работа с файлом и отправка (без изменений) -------------------
     private fun getDataFile(): File = File(filesDir, DATA_FILE_NAME)
 
     private fun saveDataToFile(jsonLine: String) {
@@ -372,34 +357,60 @@ class Service : Service(), LocationListener {
     }
 
     private suspend fun sendPendingData() {
-        if (isSendingPending) return
+        if (isSendingPending) {
+            Log.d(TAG, "Отправка pending уже выполняется, пропускаем")
+            return
+        }
+
         isSendingPending = true
         try {
             val pendingList = loadAllData()
-            if (pendingList.isEmpty()) return
-            Log.d(TAG, "Найдено ${pendingList.size} отложенных записей, отправляем...")
+            if (pendingList.isEmpty()) {
+                Log.d(TAG, "Нет pending данных")
+                return
+            }
+
+            Log.d(TAG, "Отправляем ${pendingList.size} pending записей...")
+
             val success = sendBatchToServer(pendingList)
+
             if (success) {
                 clearDataFile()
-                Log.d(TAG, "Отложенные данные успешно отправлены, файл очищен")
+                Log.d(TAG, "Pending данные отправлены и файл очищен")
             } else {
-                Log.w(TAG, "Не удалось отправить отложенные данные, оставляем в файле")
+                Log.w(TAG, "Не удалось отправить pending, оставляем в файле")
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Ошибка отправки pending: ${e.message}", e)
         } finally {
             isSendingPending = false
         }
     }
 
     private suspend fun sendBatchToServer(jsonLines: List<String>): Boolean {
+        if (jsonLines.isEmpty()) return true
+
         val jsonArray = JSONArray()
+        var validCount = 0
+
         for (line in jsonLines) {
             try {
-                jsonArray.put(JSONObject(line))
+                val jsonObj = JSONObject(line)
+                if (jsonObj.has("time") && (jsonObj.has("latitude") || jsonObj.has("longitude"))) {
+                    jsonArray.put(jsonObj)
+                    validCount++
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Ошибка парсинга сохранённой строки: $line", e)
+                Log.e(TAG, "Invalid JSON: $line", e)
             }
         }
-        if (jsonArray.length() == 0) return true
+
+        if (validCount == 0) {
+            Log.w(TAG, "Нет валидных записей для отправки")
+            return true
+        }
+
+        Log.d(TAG, "Отправляем пакет из $validCount записей (из ${jsonLines.size})")
         return sendJsonToServer(jsonArray.toString())
     }
 
