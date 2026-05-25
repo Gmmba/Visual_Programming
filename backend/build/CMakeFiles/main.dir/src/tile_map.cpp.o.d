@@ -115,6 +115,7 @@ CMakeFiles/main.dir/src/tile_map.cpp.o: \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/xmmintrin.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/mmintrin.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/mm_malloc.h \
+ /mnt/c/Visual_Programming/Visual_Programming/backend/third_party/stb_image_write.h \
  /usr/include/GL/glew.h /usr/include/c++/13/cstddef \
  /usr/include/c++/13/cstdint /usr/include/GL/glu.h /usr/include/GL/gl.h \
  /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_main.h \
@@ -493,5 +494,4 @@ CMakeFiles/main.dir/src/tile_map.cpp.o: \
  /usr/include/c++/13/bits/this_thread_sleep.h /usr/include/c++/13/fstream \
  /usr/include/x86_64-linux-gnu/c++/13/bits/basic_file.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++io.h \
- /usr/include/c++/13/bits/fstream.tcc \
- /mnt/c/Visual_Programming/Visual_Programming/backend/third_party/stb_image_write.h
+ /usr/include/c++/13/bits/fstream.tcc

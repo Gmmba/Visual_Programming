@@ -1,64 +1,51 @@
 #include "globals.h"
 
-template<typename T>
-T getJsonValue(const json& j, const std::string& k, T def = T{}) {
-    try { if (j.contains(k) && !j[k].is_null()) return j[k].get<T>(); } catch(...) {}
-    return def;
+float getFloatValue(const json& j, const std::string& k, float def = 0.0f) { return j.value(k, def); }
+int getIntValue(const json& j, const std::string& k, int def = 0) { return j.value(k, def); }
+long getLongValue(const json& j, const std::string& k, long def = 0) { return j.value(k, def); }
+std::string getStringValue(const json& j, const std::string& k, std::string def = "") { return j.value(k, def); }
+
+void updateHistory(std::map<int, std::vector<float>>& h, int pci, float val, size_t mx = 100) {
+    if (!pci) return;
+    auto& v = h[pci]; v.push_back(val);
+    if (v.size() > mx) v.erase(v.begin());
 }
 
-template<typename T>
-void updateHistory(std::map<int,std::vector<T>>& h, int pci, T val, size_t mx=100) {
+void updateHistory(std::map<int, std::vector<int>>& h, int pci, int val, size_t mx = 100) {
     if (!pci) return;
     auto& v = h[pci]; v.push_back(val);
     if (v.size() > mx) v.erase(v.begin());
 }
 
 void processJsonObject(const json& jdata, LocationData* data) {
-    float lat = getJsonValue<float>(jdata, "latitude", 0.0f);
-    float lon = getJsonValue<float>(jdata, "longitude", 0.0f);
-    float alt = getJsonValue<float>(jdata, "altitude", 0.0f);
-    float acc = getJsonValue<float>(jdata, "accuracy", 0.0f);
-    std::string time = getJsonValue<std::string>(jdata, "time", "");
-    time = convertTimeFormat(time);
-    std::string netType = getJsonValue<std::string>(jdata, "networkType", "Unknown");
-    std::string netOp = getJsonValue<std::string>(jdata, "networkOperator", "");
-    std::string netOpName = getJsonValue<std::string>(jdata, "networkOperatorName", "");
+    float lat = getFloatValue(jdata, "latitude", 0.0f);
+    float lon = getFloatValue(jdata, "longitude", 0.0f);
+    float alt = getFloatValue(jdata, "altitude", 0.0f);
+    float acc = getFloatValue(jdata, "accuracy", 0.0f);
+    std::string time = convertTimeFormat(getStringValue(jdata, "time", ""));
+    std::string netType = getStringValue(jdata, "networkType", "Unknown");
+    std::string netOp = getStringValue(jdata, "networkOperator", "");
+    std::string netOpName = getStringValue(jdata, "networkOperatorName", "");
 
-    int lteCellId = getJsonValue<int>(jdata, "lteCellId", 0);
-    int lteEarfcn = getJsonValue<int>(jdata, "lteEarfcn", 0);
-    int lteMcc = getJsonValue<int>(jdata, "lteMcc", 0);
-    int lteMnc = getJsonValue<int>(jdata, "lteMnc", 0);
-    int ltePci = getJsonValue<int>(jdata, "ltePci", 0);
-    int lteTac = getJsonValue<int>(jdata, "lteTac", 0);
-    int lteAsu = getJsonValue<int>(jdata, "lteAsuLevel", 0);
-    int lteCqi = getJsonValue<int>(jdata, "lteCqi", 0);
-    int lteRsrp = getJsonValue<int>(jdata, "lteRsrp", 0);
-    int lteRsrq = getJsonValue<int>(jdata, "lteRsrq", 0);
-    int lteRssi = getJsonValue<int>(jdata, "lteRssi", 0);
-    int lteRssnr = getJsonValue<int>(jdata, "lteRssnr", 0);
-    int lteTa = getJsonValue<int>(jdata, "lteTimingAdvance", 0);
+    int lteCellId = getIntValue(jdata, "lteCellId", 0), lteEarfcn = getIntValue(jdata, "lteEarfcn", 0);
+    int lteMcc = getIntValue(jdata, "lteMcc", 0), lteMnc = getIntValue(jdata, "lteMnc", 0);
+    int ltePci = getIntValue(jdata, "ltePci", 0), lteTac = getIntValue(jdata, "lteTac", 0);
+    int lteAsu = getIntValue(jdata, "lteAsuLevel", 0), lteCqi = getIntValue(jdata, "lteCqi", 0);
+    int lteRsrp = getIntValue(jdata, "lteRsrp", 0), lteRsrq = getIntValue(jdata, "lteRsrq", 0);
+    int lteRssi = getIntValue(jdata, "lteRssi", 0), lteRssnr = getIntValue(jdata, "lteRssnr", 0);
+    int lteTa = getIntValue(jdata, "lteTimingAdvance", 0);
 
-    int gsmCellId = getJsonValue<int>(jdata, "gsmCellId", 0);
-    int gsmBsic = getJsonValue<int>(jdata, "gsmBsic", 0);
-    int gsmArfcn = getJsonValue<int>(jdata, "gsmArfcn", 0);
-    int gsmLac = getJsonValue<int>(jdata, "gsmLac", 0);
-    int gsmMcc = getJsonValue<int>(jdata, "gsmMcc", 0);
-    int gsmMnc = getJsonValue<int>(jdata, "gsmMnc", 0);
-    int gsmPsc = getJsonValue<int>(jdata, "gsmPsc", 0);
-    int gsmDbm = getJsonValue<int>(jdata, "gsmDbm", 0);
-    int gsmTa = getJsonValue<int>(jdata, "gsmTimingAdvance", 0);
+    int gsmCellId = getIntValue(jdata, "gsmCellId", 0), gsmBsic = getIntValue(jdata, "gsmBsic", 0);
+    int gsmArfcn = getIntValue(jdata, "gsmArfcn", 0), gsmLac = getIntValue(jdata, "gsmLac", 0);
+    int gsmMcc = getIntValue(jdata, "gsmMcc", 0), gsmMnc = getIntValue(jdata, "gsmMnc", 0);
+    int gsmPsc = getIntValue(jdata, "gsmPsc", 0), gsmDbm = getIntValue(jdata, "gsmDbm", 0);
+    int gsmTa = getIntValue(jdata, "gsmTimingAdvance", 0);
 
-    int nrBand = getJsonValue<int>(jdata, "nrBand", 0);
-    long nrNci = getJsonValue<long>(jdata, "nrNci", 0L);
-    int nrPci = getJsonValue<int>(jdata, "nrPci", 0);
-    int nrNrarfcn = getJsonValue<int>(jdata, "nrNrarfcn", 0);
-    int nrTac = getJsonValue<int>(jdata, "nrTac", 0);
-    int nrMcc = getJsonValue<int>(jdata, "nrMcc", 0);
-    int nrMnc = getJsonValue<int>(jdata, "nrMnc", 0);
-    int nrRsrp = getJsonValue<int>(jdata, "nrSsRsrp", 0);
-    int nrRsrq = getJsonValue<int>(jdata, "nrSsRsrq", 0);
-    int nrSinr = getJsonValue<int>(jdata, "nrSsSinr", 0);
-    int nrTa = getJsonValue<int>(jdata, "nrTimingAdvance", 0);
+    int nrBand = getIntValue(jdata, "nrBand", 0); long nrNci = getLongValue(jdata, "nrNci", 0L);
+    int nrPci = getIntValue(jdata, "nrPci", 0), nrNrarfcn = getIntValue(jdata, "nrNrarfcn", 0);
+    int nrTac = getIntValue(jdata, "nrTac", 0), nrMcc = getIntValue(jdata, "nrMcc", 0), nrMnc = getIntValue(jdata, "nrMnc", 0);
+    int nrRsrp = getIntValue(jdata, "nrSsRsrp", 0), nrRsrq = getIntValue(jdata, "nrSsRsrq", 0);
+    int nrSinr = getIntValue(jdata, "nrSsSinr", 0), nrTa = getIntValue(jdata, "nrTimingAdvance", 0);
 
     LocationData temp;
     temp.latitude = lat; temp.longitude = lon; temp.altitude = alt; temp.accuracy = acc;
@@ -97,70 +84,62 @@ void processJsonObject(const json& jdata, LocationData* data) {
     if (inserted) {
         std::lock_guard<std::mutex> lock(data->mtx);
         if (netType == "LTE") {
-            data->lteRsrpData.push_back(static_cast<float>(lteRsrp));
-            data->lteRsrqData.push_back(static_cast<float>(lteRsrq));
-            data->lteRssiData.push_back(static_cast<float>(lteRssi));
-            data->lteAsuData.push_back(lteAsu);
-            data->lteCqiData.push_back(lteCqi);
-            data->lteRssnrData.push_back(static_cast<float>(lteRssnr));
+            data->lteRsrpData.push_back(lteRsrp); data->lteRsrqData.push_back(lteRsrq);
+            data->lteRssiData.push_back(lteRssi); data->lteRssnrData.push_back(lteRssnr);
+            data->lteAsuData.push_back(lteAsu); data->lteCqiData.push_back(lteCqi);
             data->lteTimingAdvanceData.push_back(lteTa);
             if (data->lteRsrpData.size() > 100) {
                 data->lteRsrpData.erase(data->lteRsrpData.begin());
                 data->lteRsrqData.erase(data->lteRsrqData.begin());
                 data->lteRssiData.erase(data->lteRssiData.begin());
+                data->lteRssnrData.erase(data->lteRssnrData.begin());
                 data->lteAsuData.erase(data->lteAsuData.begin());
                 data->lteCqiData.erase(data->lteCqiData.begin());
-                data->lteRssnrData.erase(data->lteRssnrData.begin());
                 data->lteTimingAdvanceData.erase(data->lteTimingAdvanceData.begin());
             }
-
             if (jdata.contains("cells") && jdata["cells"].is_array()) {
                 for (const auto& cell : jdata["cells"]) {
-                    int pci = getJsonValue<int>(cell, "pci", 0);
-                    if (pci == 0) continue;
-                    updateHistory(data->lteRsrpHistory, pci, static_cast<float>(getJsonValue<int>(cell, "rsrp", 0)));
-                    updateHistory(data->lteRsrqHistory, pci, static_cast<float>(getJsonValue<int>(cell, "rsrq", 0)));
-                    updateHistory(data->lteRssiHistory, pci, static_cast<float>(getJsonValue<int>(cell, "rssi", 0)));
-                    updateHistory(data->lteRssnrHistory, pci, static_cast<float>(getJsonValue<int>(cell, "rssnr", 0)));
-                    updateHistory(data->lteAsuHistory, pci, getJsonValue<int>(cell, "asuLevel", 0));
-                    updateHistory(data->lteCqiHistory, pci, getJsonValue<int>(cell, "cqi", 0));
-                    updateHistory(data->lteTimingAdvanceHistory, pci, getJsonValue<int>(cell, "timingAdvance", 0));
+                    int pci = getIntValue(cell, "pci", 0);
+                    if (!pci) continue;
+                    updateHistory(data->lteRsrpHistory, pci, (float)getIntValue(cell, "rsrp", 0));
+                    updateHistory(data->lteRsrqHistory, pci, (float)getIntValue(cell, "rsrq", 0));
+                    updateHistory(data->lteRssiHistory, pci, (float)getIntValue(cell, "rssi", 0));
+                    updateHistory(data->lteRssnrHistory, pci, (float)getIntValue(cell, "rssnr", 0));
+                    updateHistory(data->lteAsuHistory, pci, getIntValue(cell, "asuLevel", 0));
+                    updateHistory(data->lteCqiHistory, pci, getIntValue(cell, "cqi", 0));
+                    updateHistory(data->lteTimingAdvanceHistory, pci, getIntValue(cell, "timingAdvance", 0));
                 }
             } else if (ltePci != 0) {
-                updateHistory(data->lteRsrpHistory, ltePci, static_cast<float>(lteRsrp));
-                updateHistory(data->lteRsrqHistory, ltePci, static_cast<float>(lteRsrq));
-                updateHistory(data->lteRssiHistory, ltePci, static_cast<float>(lteRssi));
-                updateHistory(data->lteRssnrHistory, ltePci, static_cast<float>(lteRssnr));
+                updateHistory(data->lteRsrpHistory, ltePci, (float)lteRsrp);
+                updateHistory(data->lteRsrqHistory, ltePci, (float)lteRsrq);
+                updateHistory(data->lteRssiHistory, ltePci, (float)lteRssi);
+                updateHistory(data->lteRssnrHistory, ltePci, (float)lteRssnr);
                 updateHistory(data->lteAsuHistory, ltePci, lteAsu);
                 updateHistory(data->lteCqiHistory, ltePci, lteCqi);
                 updateHistory(data->lteTimingAdvanceHistory, ltePci, lteTa);
             }
-        }
-        else if (netType == "NR") {
-            data->nrSsRsrpData.push_back(static_cast<float>(nrRsrp));
-            data->nrSsRsrqData.push_back(static_cast<float>(nrRsrq));
-            data->nrSsSinrData.push_back(static_cast<float>(nrSinr));
-            data->nrTimingAdvanceData.push_back(nrTa);
+        } else if (netType == "NR") {
+            data->nrSsRsrpData.push_back(nrRsrp); data->nrSsRsrqData.push_back(nrRsrq);
+            data->nrSsSinrData.push_back(nrSinr); data->nrTimingAdvanceData.push_back(nrTa);
             if (data->nrSsRsrpData.size() > 100) {
                 data->nrSsRsrpData.erase(data->nrSsRsrpData.begin());
                 data->nrSsRsrqData.erase(data->nrSsRsrqData.begin());
                 data->nrSsSinrData.erase(data->nrSsSinrData.begin());
                 data->nrTimingAdvanceData.erase(data->nrTimingAdvanceData.begin());
             }
-
             if (jdata.contains("cells") && jdata["cells"].is_array()) {
                 for (const auto& cell : jdata["cells"]) {
-                    int pci = getJsonValue<int>(cell, "pci", 0);
-                    if (pci == 0) continue;
-                    updateHistory(data->nrRsrpHistory, pci, static_cast<float>(getJsonValue<int>(cell, "ssRsrp", 0)));
-                    updateHistory(data->nrRsrqHistory, pci, static_cast<float>(getJsonValue<int>(cell, "ssRsrq", 0)));
-                    updateHistory(data->nrSinrHistory, pci, static_cast<float>(getJsonValue<int>(cell, "ssSinr", 0)));
-                    updateHistory(data->nrTimingAdvanceHistory, pci, getJsonValue<int>(cell, "timingAdvance", 0));
+                    int pci = getIntValue(cell, "pci", 0);
+                    if (!pci) continue;
+                    updateHistory(data->nrRsrpHistory, pci, (float)getIntValue(cell, "ssRsrp", 0));
+                    updateHistory(data->nrRsrqHistory, pci, (float)getIntValue(cell, "ssRsrq", 0));
+                    updateHistory(data->nrSinrHistory, pci, (float)getIntValue(cell, "ssSinr", 0));
+                    updateHistory(data->nrTimingAdvanceHistory, pci, getIntValue(cell, "timingAdvance", 0));
                 }
             } else if (nrPci != 0) {
-                updateHistory(data->nrRsrpHistory, nrPci, static_cast<float>(nrRsrp));
-                updateHistory(data->nrRsrqHistory, nrPci, static_cast<float>(nrRsrq));
-                updateHistory(data->nrSinrHistory, nrPci, static_cast<float>(nrSinr));
+                updateHistory(data->nrRsrpHistory, nrPci, (float)nrRsrp);
+                updateHistory(data->nrRsrqHistory, nrPci, (float)nrRsrq);
+                updateHistory(data->nrSinrHistory, nrPci, (float)nrSinr);
                 updateHistory(data->nrTimingAdvanceHistory, nrPci, nrTa);
             }
         }
@@ -170,7 +149,7 @@ void processJsonObject(const json& jdata, LocationData* data) {
     }
 
     if ((recordsInserted + recordsSkipped) % 10 == 0) {
-        std::cout << "Вставлено: " << recordsInserted << ", пропущено: " << recordsSkipped << std::endl;
+        std::cout << "Вставлено: " << recordsInserted << ", пропущено: " << recordsSkipped << "\n";
     }
 }
 
@@ -182,18 +161,21 @@ void run_server(LocationData* data) {
     while (true) {
         try {
             zmq::message_t req;
-            if (!sock.recv(req, zmq::recv_flags::none)) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                continue;
+            if (!sock.recv(req, zmq::recv_flags::none)) { 
+                std::this_thread::sleep_for(std::chrono::milliseconds(10)); 
+                continue; 
             }
             std::string msg(static_cast<char*>(req.data()), req.size());
             auto jdata = json::parse(msg);
-            if (jdata.is_array()) for (const auto& item : jdata) processJsonObject(item, data);
-            else processJsonObject(jdata, data);
+            if (jdata.is_array()) {
+                for (const auto& item : jdata) processJsonObject(item, data);
+            } else {
+                processJsonObject(jdata, data);
+            }
             sock.send(zmq::buffer("ACK"), zmq::send_flags::none);
-        } catch (const std::exception& e) {
-            std::cerr << "ZMQ: " << e.what() << "\n";
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        } catch (const std::exception& e) { 
+            std::cerr << "ZMQ: " << e.what() << "\n"; 
+            std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
         }
     }
 }

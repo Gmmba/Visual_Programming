@@ -203,6 +203,30 @@ src/gui.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/gui.cpp.s
 .PHONY : src/gui.cpp.s
 
+src/heatmap.o: src/heatmap.cpp.o
+.PHONY : src/heatmap.o
+
+# target to build an object file
+src/heatmap.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/heatmap.cpp.o
+.PHONY : src/heatmap.cpp.o
+
+src/heatmap.i: src/heatmap.cpp.i
+.PHONY : src/heatmap.i
+
+# target to preprocess a source file
+src/heatmap.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/heatmap.cpp.i
+.PHONY : src/heatmap.cpp.i
+
+src/heatmap.s: src/heatmap.cpp.s
+.PHONY : src/heatmap.s
+
+# target to generate assembly for a file
+src/heatmap.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/heatmap.cpp.s
+.PHONY : src/heatmap.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -532,6 +556,9 @@ help:
 	@echo "... src/gui.o"
 	@echo "... src/gui.i"
 	@echo "... src/gui.s"
+	@echo "... src/heatmap.o"
+	@echo "... src/heatmap.i"
+	@echo "... src/heatmap.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

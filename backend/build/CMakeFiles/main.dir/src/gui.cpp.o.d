@@ -59,8 +59,10 @@ CMakeFiles/main.dir/src/gui.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/c++/13/bits/std_abs.h /usr/include/GL/glew.h \
- /usr/include/c++/13/cstddef /usr/include/c++/13/cstdint \
+ /usr/include/c++/13/bits/std_abs.h \
+ /mnt/c/Visual_Programming/Visual_Programming/backend/third_party/stb_image_write.h \
+ /usr/include/GL/glew.h /usr/include/c++/13/cstddef \
+ /usr/include/c++/13/cstdint \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
@@ -495,5 +497,4 @@ CMakeFiles/main.dir/src/gui.cpp.o: \
  /usr/include/c++/13/bits/this_thread_sleep.h /usr/include/c++/13/fstream \
  /usr/include/x86_64-linux-gnu/c++/13/bits/basic_file.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++io.h \
- /usr/include/c++/13/bits/fstream.tcc \
- /mnt/c/Visual_Programming/Visual_Programming/backend/third_party/stb_image_write.h
+ /usr/include/c++/13/bits/fstream.tcc

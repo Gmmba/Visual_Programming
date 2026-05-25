@@ -54,6 +54,7 @@ add_executable(main
     src/db_manager.cpp
     src/zmq_server.cpp
     src/gui.cpp
+    src/heatmap.cpp
 )
 target_include_directories(main PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(main PRIVATE

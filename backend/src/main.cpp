@@ -8,6 +8,11 @@ int main() {
                   " dbname=" + dbConfig.dbname + " user=" + dbConfig.user +
                   " password=" + dbConfig.password;
     fetchDBPoints();
+    fetchHeatmapPoints();
+    std::thread(HeatmapWorker).detach();
+    std::thread(HeatmapWorker).detach();
+    std::thread(HeatmapWorker).detach();
+    std::thread(HeatmapWorker).detach();
     dbManager->testConnection();
     LocationData locationData;
     std::thread(FetchWorker).detach();
