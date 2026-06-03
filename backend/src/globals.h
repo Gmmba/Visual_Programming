@@ -27,7 +27,12 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 struct TileJob { std::string id; int zoom, x, y; };
-struct TextureData { GLuint id = 0; bool isLoading = false; std::vector<uint8_t> rgbaBlob; int width = 0, height = 0; };
+struct TextureData { 
+    GLuint id = 0; 
+    bool isLoading = false; 
+    std::vector<uint8_t> rgbaBlob; 
+    int width = 0, height = 0; 
+};
 
 extern std::map<std::string, TextureData> g_TileCache;
 extern std::queue<TileJob> g_JobQueue;

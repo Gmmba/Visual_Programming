@@ -51,7 +51,7 @@ void fetchHeatmapPoints() {
 }
 Color gradientColor(Color c1, Color c2, double ratio) {
     if(ratio > 1.0) ratio = 1.0;
-    return {static_cast<int>(c1.r+(c2.r-c1.r)*ratio), static_cast<int>(c1.g+(c2.g-c1.g)*ratio), static_cast<int>(c1.b+(c2.b-c1.b)*ratio)};
+    return {(int)(c1.r+(c2.r-c1.r)*ratio), (int)(c1.g+(c2.g-c1.g)*ratio), (int)(c1.b+(c2.b-c1.b)*ratio)};
 }
 Color signalToColor(double t) {
     static const Stop stops[] = {
@@ -69,7 +69,7 @@ Color signalToColor(double t) {
     }
     return stops[N-1].c;
 }
-static double haversineMeters(double lat1, double lon1, double lat2, double lon2) {
+double haversineMeters(double lat1, double lon1, double lat2, double lon2) {
     const double R = 6371000.0;
     double phi1 = lat1 * M_PI / 180.0;
     double phi2 = lat2 * M_PI / 180.0;
@@ -79,7 +79,7 @@ static double haversineMeters(double lat1, double lon1, double lat2, double lon2
     double c = 2.0 * std::atan2(std::sqrt(a), std::sqrt(1.0 - a));
     return R * c;
 }
-static float computeIDW(double lat, double lon, const std::vector<const HeatmapPoint*>& pts, HeatmapCriteria crit, float radiusM, double& outNearestM) {
+float computeIDW(double lat, double lon, const std::vector<const HeatmapPoint*>& pts, HeatmapCriteria crit, float radiusM, double& outNearestM) {
     const double P = 1.0;
     double sumWeights = 0.0, sumWeightedValues = 0.0;
     outNearestM = 1e9;
@@ -103,14 +103,17 @@ static float computeIDW(double lat, double lon, const std::vector<const HeatmapP
     if(sumWeights < 1e-12) return NAN;
     return (float)(sumWeightedValues / sumWeights);
 }
-static std::vector<uint8_t> renderTile(int zoom, int tileX, int tileY, const std::vector<HeatmapPoint>& allPoints, HeatmapCriteria crit, float baseRadiusM, int earfcnFilter, int pciFilter) {
+double mercYToLat(double mercY) {
+    return 2.0 * std::atan(std::exp(mercY * M_PI / 180.0)) * 180.0 / M_PI - 90.0;
+}
+
+std::vector<uint8_t> renderTile(int zoom, int tileX, int tileY, const std::vector<HeatmapPoint>& allPoints, HeatmapCriteria crit, float baseRadiusM, int earfcnFilter, int pciFilter) {
     const int SZ = 256;
     std::vector<uint8_t> image(SZ * SZ * 4, 0);
     double mercX0 = TileXToMercatorX(tileX, zoom);
     double mercX1 = TileXToMercatorX(tileX + 1, zoom);
     double mercY0 = TileYToMercatorY(tileY, zoom);
     double mercY1 = TileYToMercatorY(tileY + 1, zoom);
-    auto mercYToLat = [](double mercY) -> double { return 2.0 * std::atan(std::exp(mercY * M_PI / 180.0)) * 180.0 / M_PI - 90.0; };
     double latTop = mercYToLat(mercY0);
     double latBottom = mercYToLat(mercY1);
     double midLat = (latTop + latBottom) / 2.0;
@@ -143,7 +146,9 @@ static std::vector<uint8_t> renderTile(int zoom, int tileX, int tileY, const std
             if(p->altitude < valMin) valMin = p->altitude;
             if(p->altitude > valMax) valMax = p->altitude;
         }
-        if(valMax - valMin < 1.0f) { valMin -= 0.5f; valMax += 0.5f; }
+        if(valMax - valMin < 1.0f) { 
+            valMin -= 0.5f; valMax += 0.5f; 
+        }
     }
     for(int py = 0; py < SZ; ++py) {
         double mercY = mercY0 + (py + 0.5) / SZ * (mercY1 - mercY0);
@@ -196,7 +201,14 @@ void HeatmapWorker() {
         if(fs::exists(tilePath)) {
             int w, h, ch;
             uint8_t* pixels = stbi_load(tilePath.c_str(), &w, &h, &ch, 4);
-            if(pixels) { rgba.assign(pixels, pixels + w * h * 4); stbi_image_free(pixels); }
+            if(pixels) { 
+                size_t totalBytes = w * h * 4;
+                rgba.resize(totalBytes);
+                for(size_t i = 0; i < totalBytes; ++i) {
+                    rgba[i] = pixels[i];
+                }
+                stbi_image_free(pixels); 
+            }
         }
         if(rgba.empty()) {
             rgba = renderTile(job.zoom, job.x, job.y, points, crit, radiusM, earfcnFilter, pciFilter);

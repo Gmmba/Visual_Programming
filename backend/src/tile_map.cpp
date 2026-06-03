@@ -33,7 +33,10 @@ void FetchWorker() {
         TileJob job;
         {
             std::unique_lock<std::mutex> lk(g_JobMutex);
-            if (g_JobQueue.empty()) { lk.unlock(); std::this_thread::sleep_for(std::chrono::milliseconds(50)); continue; }
+            if (g_JobQueue.empty()) { 
+                lk.unlock(); std::this_thread::sleep_for(std::chrono::milliseconds(50)); 
+                continue; 
+            }
             job = g_JobQueue.front(); g_JobQueue.pop();
         }
 
@@ -41,7 +44,13 @@ void FetchWorker() {
         std::vector<unsigned char> rawBlob;
         if (fs::exists(path)) {
             std::ifstream ifs(path, std::ios::binary);
-            if (ifs) rawBlob.assign(std::istreambuf_iterator<char>(ifs), {});
+            if (ifs) {
+                rawBlob.clear();
+                char byte;
+                while (ifs.get(byte)) {
+                    rawBlob.push_back(static_cast<unsigned char>(byte));
+                }
+            }
         }
 
         if (rawBlob.empty()) {
@@ -71,17 +80,24 @@ void FetchWorker() {
         }
         if (rawBlob.empty()) continue;
 
-        int w = 0, h = 0, ch = 0;
-        unsigned char* pixels = stbi_load_from_memory(rawBlob.data(), (int)rawBlob.size(), &w, &h, &ch, STBI_rgb_alpha);
-        if (!pixels) { std::lock_guard<std::mutex> lk(g_CacheMutex); g_TileCache[job.id].isLoading = false; continue; }
+            int w = 0, h = 0, ch = 0;
+            unsigned char* pixels = stbi_load_from_memory(rawBlob.data(), (int)rawBlob.size(), &w, &h, &ch, STBI_rgb_alpha);
+            if (!pixels) { 
+                std::lock_guard<std::mutex> lk(g_CacheMutex); 
+                g_TileCache[job.id].isLoading = false; 
+                continue; 
+            }
 
-        {
-            std::lock_guard<std::mutex> lk(g_CacheMutex);
-            auto& tex = g_TileCache[job.id];
-            tex.rgbaBlob.assign(pixels, pixels + w * h * 4);
-            tex.width = w; tex.height = h; tex.isLoading = false;
+            {
+                std::lock_guard<std::mutex> lk(g_CacheMutex);
+                auto& tex = g_TileCache[job.id];
+                tex.rgbaBlob.clear();
+                for (int i = 0; i < w * h * 4; ++i) {
+                    tex.rgbaBlob.push_back(pixels[i]);
+                }
+                tex.width = w; tex.height = h; tex.isLoading = false;
+            }
+            stbi_image_free(pixels);
         }
-        stbi_image_free(pixels);
-    }
-    curl_easy_cleanup(curl);
+        curl_easy_cleanup(curl);
 }

@@ -168,7 +168,9 @@ void run_server(LocationData* data) {
             std::string msg(static_cast<char*>(req.data()), req.size());
             auto jdata = json::parse(msg);
             if (jdata.is_array()) {
-                for (const auto& item : jdata) processJsonObject(item, data);
+                for (const auto& item : jdata) {
+                    processJsonObject(item, data);
+                }
             } else {
                 processJsonObject(jdata, data);
             }
